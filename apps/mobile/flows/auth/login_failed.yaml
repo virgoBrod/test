@@ -1,0 +1,28 @@
+appId: com.inovisec.broadsecmobileapp
+
+---
+
+# ============================================================
+# Test: Login fallido con credenciales inválidas
+# ============================================================
+- launchApp:
+    clearState: true
+
+- assertVisible: "Username"
+- assertVisible: "Password"
+
+- tapOn: "Username"
+- inputText: ${MOBILE_USER_EMAIL}
+
+- tapOn: "Password"
+- inputText: "wrong_password_12345"
+
+- tapOn: "LOG IN"
+
+# Verificar que alguno de los mensajes de error es visible
+- assertTrue:
+    condition: |
+      visible("Credenciales Incorrectas") ||
+      visible("Recurso no Encontrado") ||
+      visible("Error Interno del Servidor") ||
+      visible("Error Desconocido")

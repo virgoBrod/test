@@ -1,0 +1,33 @@
+appId: com.inovisec.broadsecmobileapp
+
+---
+# ============================================================
+# Test: Login exitoso con credenciales válidas
+# ============================================================
+- launchApp:
+    clearState: true
+
+- assertVisible: "Username"
+- tapOn: "Username"
+- inputText: "JPF123"
+
+- pressKey: Enter
+
+- scrollUntilVisible:
+    element:
+      text: "LOG IN"
+
+- assertVisible: "Password"
+- tapOn: "Password"
+- inputText: "Test123!"
+
+- pressKey: Enter
+
+- tapOn: "LOG IN"
+
+# Esperar que la animación de check termine (máx 5s)
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verificar que llegamos al home/dashboard
+- assertVisible: "Hello, Juan Cuellar"

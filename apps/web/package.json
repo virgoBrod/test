@@ -1,0 +1,12 @@
+{
+  "name": "qa-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:web": "cd apps/web && npm test",
+    "test:mobile:login": "maestro test apps/mobile/flows/auth/login.yaml --env MOBILE_USER_EMAIL=%MOBILE_USER_EMAIL% --env MOBILE_USER_PASSWORD=%MOBILE_USER_PASSWORD%",
+    "test:mobile:login-failed": "maestro test apps/mobile/flows/auth/login_failed.yaml --env MOBILE_USER_EMAIL=%MOBILE_USER_EMAIL% --env MOBILE_USER_PASSWORD=%MOBILE_USER_PASSWORD%",
+    "test:mobile": "maestro test apps/mobile/flows/auth/ --env MOBILE_USER_EMAIL=%MOBILE_USER_EMAIL% --env MOBILE_USER_PASSWORD=%MOBILE_USER_PASSWORD%",
+    "test:all": "npm run test:web && npm run test:mobile"
+  }
+}
