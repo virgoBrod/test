@@ -8,5 +8,10 @@
     "test:mobile:login-failed": "maestro test apps/mobile/flows/auth/login_failed.yaml --env MOBILE_USER_EMAIL=%MOBILE_USER_EMAIL% --env MOBILE_USER_PASSWORD=%MOBILE_USER_PASSWORD%",
     "test:mobile": "maestro test apps/mobile/flows/auth/ --env MOBILE_USER_EMAIL=%MOBILE_USER_EMAIL% --env MOBILE_USER_PASSWORD=%MOBILE_USER_PASSWORD%",
     "test:all": "npm run test:web && npm run test:mobile"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.0",
+    "@types/node": "^25.5.0",
+    "dotenv": "^17.3.1"
   }
 }
