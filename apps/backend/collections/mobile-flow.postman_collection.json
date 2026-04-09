@@ -71,6 +71,7 @@
               "  const body = pm.response.json();",
               "  pm.expect(body.agent_id).to.be.a('string');",
               "  pm.expect(body.state).to.be.a('string');",
+              "  pm.environment.set('agentState', body.state);",
               "});",
               "",
               "pm.test('Estructura active_case correcta', () => {",
@@ -104,6 +105,67 @@
               "value": "{{agentId}}"
             }
           ]
+        }
+      }
+    },
+    {
+      "name": "EnsureAvailable",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const state = pm.environment.get('agentState');",
+              "if (state === 'available') {",
+              "  pm.execution.skipRequest();",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Agente cambiado a available', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.newState).to.be.a('string');",
+              "  pm.environment.set('agentState', body.newState);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{agentId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agentStates",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agentStates"]
         }
       }
     },
@@ -406,7 +468,7 @@
       }
     },
     {
-      "name": "ChangeAgentState",
+      "name": "ChangeAgentState — Available to Unavailable",
       "event": [
         {
           "listen": "test",
@@ -447,7 +509,63 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"agent_id\": {{agentId}},\n  \"note\": \"Test state change\"\n}",
+          "raw": "{\n  \"agent_id\": {{agentId}},\n  \"note\": \"Test unavailability reason\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agentStates",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agentStates"]
+        }
+      }
+    },
+    {
+      "name": "ChangeAgentState — Unavailable to Available",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna message y agent_id', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "  pm.expect(body.agent_id).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna previousState y newState', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.previousState).to.be.a('string');",
+              "  pm.expect(body.newState).to.be.a('string');",
+              "  pm.expect(body.history_id).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{agentId}}\n}",
           "options": {
             "raw": {
               "language": "json"
