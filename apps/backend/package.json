@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "test": "node run-tests.js",
-    "test:auth": "node run-tests.js"
+    "test:auth": "node run-tests.js",
+    "test:mobile-flow": "node run-mobile-flow.js",
+    "test:web-flow": "node run-web-flow.js"
   },
   "devDependencies": {
     "dotenv": "^17.3.1",
