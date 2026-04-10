@@ -3,6 +3,28 @@
     "name": "Web Flow",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "const status = pm.response.code;",
+          "if (status >= 400) {",
+          "  let body = '';",
+          "  try { body = JSON.stringify(pm.response.json(), null, 2); }",
+          "  catch (e) { body = pm.response.text(); }",
+          "  console.error('=== REQUEST FAILED ===');",
+          "  console.error('Request : ' + pm.info.requestName);",
+          "  console.error('Status  : ' + status + ' ' + pm.response.status);",
+          "  console.error('URL     : ' + pm.request.url.toString());",
+          "  console.error('Body    : ' + body);",
+          "  console.error('======================');",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
   "item": [
     {
       "name": "Login",
@@ -15,10 +37,8 @@
               "  pm.response.to.have.status(200);",
               "});",
               "",
-              "pm.test('Retorna token y guarda authToken', () => {",
-              "  const body = pm.response.json();",
-              "  pm.expect(body.token).to.be.a('string');",
-              "  pm.environment.set('webAuthToken', body.token);",
+              "pm.test('Retorna token', () => {",
+              "  pm.expect(pm.response.json().token).to.be.a('string');",
               "});",
               "",
               "pm.test('Retorna datos del calltaker', () => {",
@@ -27,7 +47,6 @@
               "  pm.expect(body.fullName).to.be.a('string');",
               "  pm.expect(body.email).to.be.a('string');",
               "  pm.expect(body.role).to.be.a('string');",
-              "  pm.environment.set('webCallTakerId', body.idCallTaker);",
               "});",
               "",
               "pm.test('Retorna datos de estacion y proyecto', () => {",
@@ -35,7 +54,12 @@
               "  pm.expect(body.stationNumber).to.be.a('number');",
               "  pm.expect(body.project).to.be.a('string');",
               "  pm.expect(body.city).to.be.a('string');",
-              "});"
+              "});",
+              "",
+              "const _login = pm.response.json();",
+              "pm.environment.set('webAuthToken', _login.token);",
+              "pm.environment.set('webCallTakerId', _login.idCallTaker);",
+              "pm.environment.set('webStationNumber', _login.stationNumber);"
             ],
             "type": "text/javascript"
           }
@@ -89,7 +113,7 @@
               "  pm.expect(first.subitems).to.be.an('array');",
               "  if (first.subitems.length > 0) {",
               "    pm.expect(first.subitems[0].id).to.be.a('number');",
-              "    pm.expect(first.subitems[0].name).to.be.a('string');",
+              "    pm.expect(first.subitems[0].nombre).to.be.a('string');",
               "  }",
               "});"
             ],
@@ -236,7 +260,15 @@
               "    pm.expect(incident.case_state).to.be.a('string');",
               "    pm.expect(incident.type).to.be.a('string');",
               "  }",
-              "});"
+              "});",
+              "",
+              "pm.test('Retorna al menos un resultado', () => {",
+              "  pm.expect(pm.response.json().data.length).to.be.above(0);",
+              "});",
+              "",
+              "const _incidents = pm.response.json();",
+              "pm.environment.set('webIncidentId', _incidents.data[0].id);",
+              "pm.environment.set('webCarbyneId', _incidents.data[0].carbyne_id);"
             ],
             "type": "text/javascript"
           }
@@ -266,6 +298,713 @@
             { "key": "page", "value": "1" },
             { "key": "search", "value": "" }
           ]
+        }
+      }
+    },
+    {
+      "name": "GetIncident",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna datos del incidente', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('number');",
+              "  pm.expect(body.case_state).to.be.a('string');",
+              "  pm.expect(body.phone).to.be.a('string');",
+              "  pm.expect(body.callType).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('ID coincide con el incidente consultado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.eql(parseInt(pm.environment.get('webIncidentId')));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/incident/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "incident", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "GetUbic",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna caseLocations y agentLocations', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.caseLocations).to.be.an('array');",
+              "  pm.expect(body.agentLocations).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Estructura de caseLocation correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.caseLocations.length > 0) {",
+              "    const loc = body.caseLocations[0];",
+              "    pm.expect(loc.id).to.be.a('number');",
+              "    pm.expect(loc.key).to.be.a('string');",
+              "    pm.expect(loc.location).to.have.property('lat');",
+              "    pm.expect(loc.location).to.have.property('lng');",
+              "  }",
+              "});",
+              "",
+              "pm.test('Estructura de agentLocation correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.agentLocations.length > 0) {",
+              "    const agent = body.agentLocations[0];",
+              "    pm.expect(agent.type).to.be.a('string');",
+              "    pm.expect(agent.id).to.be.a('number');",
+              "    pm.expect(agent.nearestPosition).to.have.property('lat');",
+              "    pm.expect(agent.nearestPosition).to.have.property('lng');",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/ubic/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "ubic", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "GetListd",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna datos del detalle del incidente', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('number');",
+              "  pm.expect(body.case_state).to.be.a('string');",
+              "  pm.expect(body.phone).to.be.a('string');",
+              "  pm.expect(body.caller_name).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna flags de media', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.video).to.be.a('boolean');",
+              "  pm.expect(body.image).to.be.a('boolean');",
+              "  pm.expect(body.locHistory).to.be.a('boolean');",
+              "  pm.expect(body.transcription).to.be.a('boolean');",
+              "  pm.expect(body.chat).to.be.a('boolean');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/listd/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "listd", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "GetCallAI",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna reporte de CallAI', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.reportID).to.be.a('string');",
+              "  pm.expect(body.typeEmergency).to.be.a('string');",
+              "  pm.expect(body.summary).to.be.a('string');",
+              "  pm.expect(body.priority).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna campos de detalle de la emergencia', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.callerInformation).to.exist;",
+              "  pm.expect(body.locEmergency).to.exist;",
+              "  pm.expect(body.dynamicProtocol).to.be.an('array');",
+              "  pm.expect(body.isBest).to.be.a('boolean');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/callAI/{{webCarbyneId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "callAI", "{{webCarbyneId}}"]
+        }
+      }
+    },
+    {
+      "name": "GetTranscription",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna array de transcripcion', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Estructura de entrada de transcripcion correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.length > 0) {",
+              "    const entry = body[0];",
+              "    pm.expect(entry.id).to.be.a('number');",
+              "    pm.expect(entry.timestamp).to.be.a('string');",
+              "    const hasOperator = entry.operator !== null || entry.caller !== null;",
+              "    pm.expect(hasOperator).to.be.true;",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/transc/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "transc", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "GetVideo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna id del incidente', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna videoUrl como string', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.videoUrl).to.be.a('string');",
+              "  pm.expect(body.videoUrl).to.include('https://');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/video/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "video", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "GetUbicHistory",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna array de historial de ubicaciones', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Estructura de ubicacion historica correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.length > 0) {",
+              "    const entry = body[0];",
+              "    pm.expect(entry.id).to.be.a('number');",
+              "    pm.expect(entry.latitude).to.be.a('number');",
+              "    pm.expect(entry.longitude).to.be.a('number');",
+              "    pm.expect(entry.locationtimestamp).to.be.a('string');",
+              "    pm.expect(entry.formattedaddress).to.be.a('string');",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/histubic/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "histubic", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "ManualLocation",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna mensaje de ubicacion registrada', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "  pm.expect(body.message).to.include('correctamente');",
+              "});",
+              "",
+              "pm.test('Retorna detail_ubic_id', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.detail_ubic_id).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"match_id\": {{webIncidentId}},\n  \"formattedAddress\": \"Cl. 38A Sur #34d-51, Bogotá, Colombia\",\n  \"latitude\": 4.590252,\n  \"longitude\": -74.124033\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/api/incident/location",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "incident", "location"]
+        }
+      }
+    },
+    {
+      "name": "GetIncidentImages",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna id del incidente', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna imagenUrl con array de imagenes', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.imagenUrl).to.be.an('array');",
+              "  if (body.imagenUrl.length > 0) {",
+              "    pm.expect(body.imagenUrl[0].url).to.be.a('string');",
+              "    pm.expect(body.imagenUrl[0].url).to.include('https://');",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/image/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "image", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "Dispatch",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna mensaje de despacho exitoso', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "  pm.expect(body.message).to.include('éxito');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"station_number\": {{webStationNumber}},\n  \"match_id\": {{webIncidentId}},\n  \"agent_id\": [0],\n  \"link_rc\": null,\n  \"customMessage\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/api/dispatchs",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "dispatchs"]
+        }
+      }
+    },
+    {
+      "name": "GetDetailDispatch",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna datos del despacho', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.created).to.be.a('string');",
+              "  pm.expect(body.apexCallTaker).to.be.a('string');",
+              "  pm.expect(body.carbyneId).to.be.a('number');",
+              "  pm.expect(body.id).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Caso en estado despachado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.caseState).to.eql('case_dispatched');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/detaildispatch/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "detaildispatch", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "GetListDisp",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna datos del listado de despacho', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.created).to.be.a('string');",
+              "  pm.expect(body.apexCallTaker).to.be.a('string');",
+              "  pm.expect(body.dispatch).to.be.an('array');",
+              "  pm.expect(body.dispatch.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test('Retorna dispatchAgents con historic', () => {",
+              "  const body = pm.response.json();",
+              "  const agents = body.dispatch[0].dispatchAgents;",
+              "  pm.expect(agents).to.be.an('array');",
+              "  pm.expect(agents.length).to.be.above(0);",
+              "  pm.expect(agents[0].historic.id).to.be.a('number');",
+              "});",
+              "",
+              "const _listdisp = pm.response.json();",
+              "pm.environment.set('webAgentHistoryId', _listdisp.dispatch[0].dispatchAgents[0].historic.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/listdisp/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "listdisp", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "InSiteCase",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna mensaje de actualizacion a in_site', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "  pm.expect(body.message).to.include('in_site');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"station_number\": {{webStationNumber}},\n  \"match_id\": {{webIncidentId}},\n  \"agent_history_id\": {{webAgentHistoryId}},\n  \"targetSound\": \"in_site\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/api/states",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "states"]
+        }
+      }
+    },
+    {
+      "name": "InSiteCase (Close)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna mensaje de cierre', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"station_number\": {{webStationNumber}},\n  \"match_id\": {{webIncidentId}},\n  \"agent_history_id\": {{webAgentHistoryId}},\n  \"targetSound\": \"in_site\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/api/states",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "states"]
+        }
+      }
+    },
+    {
+      "name": "GetDetailDispatch (Validate Closed)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna datos del despacho', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.created).to.be.a('string');",
+              "  pm.expect(body.apexCallTaker).to.be.a('string');",
+              "  pm.expect(body.carbyneId).to.be.a('number');",
+              "  pm.expect(body.id).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Caso cerrado correctamente', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.caseState).to.eql('case_closed');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/detaildispatch/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "detaildispatch", "{{webIncidentId}}"]
         }
       }
     },
