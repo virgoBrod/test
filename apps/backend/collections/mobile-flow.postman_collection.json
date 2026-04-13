@@ -88,7 +88,7 @@
         }
       ],
       "request": {
-        "method": "POST",
+        "method": "GET",
         "header": [
           {
             "key": "Authorization",
@@ -96,8 +96,8 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/state?agent_id={{agentId}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{webBaseUrl}}/api/state?agent_id={{agentId}}",
+          "host": ["{{webBaseUrl}}"],
           "path": ["api", "state"],
           "query": [
             {
@@ -376,8 +376,10 @@
               "  const body = pm.response.json();",
               "  pm.expect(body.data).to.be.an('object');",
               "  pm.expect(body.data.id).to.be.a('number');",
-              "  pm.expect(body.data.action).to.be.an('object');",
-              "  pm.expect(body.data.subitem).to.be.an('object');",
+              "  pm.expect(body.data.actionId).to.be.a('number');",
+              "  pm.expect(body.data.actionName).to.be.a('string');",
+              "  pm.expect(body.data.subitemId).to.be.a('number');",
+              "  pm.expect(body.data.subitemName).to.be.a('string');",
               "});"
             ],
             "type": "text/javascript"
