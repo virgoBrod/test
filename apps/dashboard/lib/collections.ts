@@ -1,4 +1,5 @@
 import path from "path";
+import type { CollectionType } from "@/types";
 
 export type CollectionId = "auth" | "mobile-flow" | "web-flow";
 
@@ -9,6 +10,7 @@ export interface CollectionConfig {
   collectionFile: string;
   environmentFile: string;
   credentialFields: CredentialField[];
+  type: CollectionType;
 }
 
 export interface CredentialField {
@@ -45,20 +47,10 @@ export const COLLECTIONS: CollectionConfig[] = [
       ENVIRONMENTS_DIR,
       "mobile.postman_environment.json"
     ),
+    type: "mobile",
     credentialFields: [
-      {
-        key: "baseUrl",
-        label: "URL servidor Mobile",
-        type: "text",
-        envVar: "baseUrl",
-      },
       { key: "callsign", label: "Callsign", type: "text", envVar: "callsign" },
-      {
-        key: "password",
-        label: "Contraseña",
-        type: "password",
-        envVar: "password",
-      },
+      { key: "password", label: "Contraseña", type: "password", envVar: "password" },
     ],
   },
   {
@@ -73,26 +65,10 @@ export const COLLECTIONS: CollectionConfig[] = [
       ENVIRONMENTS_DIR,
       "mobile.postman_environment.json"
     ),
+    type: "mobile",
     credentialFields: [
-      {
-        key: "baseUrl",
-        label: "URL servidor Mobile",
-        type: "text",
-        envVar: "baseUrl",
-      },
-      {
-        key: "webBaseUrl",
-        label: "URL servidor Web",
-        type: "text",
-        envVar: "webBaseUrl",
-      },
       { key: "callsign", label: "Callsign", type: "text", envVar: "callsign" },
-      {
-        key: "password",
-        label: "Contraseña",
-        type: "password",
-        envVar: "password",
-      },
+      { key: "password", label: "Contraseña", type: "password", envVar: "password" },
     ],
   },
   {
@@ -107,25 +83,10 @@ export const COLLECTIONS: CollectionConfig[] = [
       ENVIRONMENTS_DIR,
       "web.postman_environment.json"
     ),
+    type: "web",
     credentialFields: [
-      {
-        key: "webBaseUrl",
-        label: "URL del servidor",
-        type: "text",
-        envVar: "webBaseUrl",
-      },
-      {
-        key: "webEmail",
-        label: "Email",
-        type: "text",
-        envVar: "webEmail",
-      },
-      {
-        key: "webPassword",
-        label: "Contraseña",
-        type: "password",
-        envVar: "webPassword",
-      },
+      { key: "webEmail", label: "Email", type: "text", envVar: "webEmail" },
+      { key: "webPassword", label: "Contraseña", type: "password", envVar: "webPassword" },
     ],
   },
 ];

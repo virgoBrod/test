@@ -11,11 +11,31 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const limit = Number(searchParams.get("limit") ?? 20);
+  const projectId = searchParams.get("project_id");
+  const collection = searchParams.get("collection");
 
-  const rows = await db.execute({
-    sql: `SELECT * FROM executions ORDER BY started_at DESC LIMIT ?`,
-    args: [limit],
-  });
+  let sql = `SELECT * FROM executions`;
+  const args: (string | number)[] = [];
+  const conditions: string[] = [];
+
+  if (projectId) {
+    conditions.push(`project_id = ?`);
+    args.push(projectId);
+  }
+
+  if (collection) {
+    conditions.push(`collection = ?`);
+    args.push(collection);
+  }
+
+  if (conditions.length > 0) {
+    sql += ` WHERE ` + conditions.join(` AND `);
+  }
+
+  sql += ` ORDER BY started_at DESC LIMIT ?`;
+  args.push(limit);
+
+  const rows = await db.execute({ sql, args });
 
   return Response.json(rows.rows);
 }

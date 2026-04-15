@@ -1,0 +1,49 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Next.js 16.2.3 (App Router), React 19, TypeScript 5, Tailwind CSS v4, LibSQL/SQLite
+  Architecture: Monorepo (pnpm workspaces) — dashboard consumes backend Postman collections via Newman
+  Testing: No unit test runner — E2E via Playwright in apps/web only
+  Style: ESLint (eslint-config-next), TypeScript strict
+  Note: Next.js 16 has breaking changes — read node_modules/next/dist/docs/ before writing code
+
+strict_tdd: false
+
+testing:
+  strict_tdd: false
+  reason: No unit test runner detected in dashboard
+  runner: null
+  layers:
+    unit: { available: false, tool: null }
+    integration: { available: false, tool: null }
+    e2e: { available: false, tool: null }
+  coverage: { available: false, command: null }
+  quality:
+    linter: { available: true, command: "pnpm lint" }
+    type_checker: { available: true, command: "tsc --noEmit" }
+    formatter: { available: false, command: null }
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected components and lib modules
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include component hierarchy diagrams for UI changes
+    - Document design system tokens and color decisions
+  tasks:
+    - Group by phase (design-system, layout, components, data, integration)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks small enough to complete in one session
+  apply:
+    - Read node_modules/next/dist/docs/ for Next.js 16 API before writing code
+    - Follow existing App Router patterns
+    - Use Tailwind CSS v4 syntax
+  verify:
+    - Run tsc --noEmit for type checking
+    - Run pnpm lint for lint validation
+    - Visual verification required (no unit tests available)
+  archive:
+    - Warn before merging destructive deltas

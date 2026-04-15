@@ -9,14 +9,10 @@ export interface RunEvent {
 
 export function runCollection(
   config: CollectionConfig,
-  credentials: Record<string, string>,
+  envVars: { key: string; value: string }[],
   executionId: number,
   onEvent: (event: RunEvent) => void
 ): void {
-  const envVars = config.credentialFields.map((field) => ({
-    key: field.envVar,
-    value: credentials[field.key] ?? "",
-  }));
 
   onEvent({ type: "start", data: { executionId } });
 

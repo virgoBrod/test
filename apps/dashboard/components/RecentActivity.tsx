@@ -1,66 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-
-interface Execution {
-  id: number;
-  collection: string;
-  started_at: string;
-  finished_at: string | null;
-  status: string;
-  total: number;
-  passed: number;
-  failed: number;
-  duration_ms: number;
-}
+import type { Execution } from "@/types";
 
 interface Props {
-  refreshKey: number;
+  executions: Execution[];
 }
 
-export default function HistoryPanel({ refreshKey }: Props) {
-  const [executions, setExecutions] = useState<Execution[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/executions")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!cancelled) {
-          setExecutions(data);
-          setLoaded(true);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
-
-  if (!loaded) {
-    return (
-      <div className="text-sm text-gray-400 px-1">Cargando historial...</div>
-    );
-  }
-
+export default function RecentActivity({ executions }: Props) {
   if (!executions.length) {
     return (
-      <div className="text-sm text-gray-400 px-1">
-        Aún no hay ejecuciones guardadas.
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">Actividad Reciente</h3>
+        <p className="text-sm text-gray-400 py-8 text-center">
+          Aún no hay ejecuciones registradas
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <h3 className="text-sm font-semibold text-gray-900 mb-4">Actividad Reciente</h3>
       <div className="divide-y divide-gray-50">
-        {executions.map((exec) => {
+        {executions.slice(0, 5).map((exec) => {
           const date = new Date(exec.started_at);
           const formattedDate = date.toLocaleDateString("es-AR", {
             day: "2-digit",
             month: "2-digit",
-            year: "numeric",
           });
           const formattedTime = date.toLocaleTimeString("es-AR", {
             hour: "2-digit",
@@ -71,7 +38,7 @@ export default function HistoryPanel({ refreshKey }: Props) {
             <Link
               key={exec.id}
               href={`/history/${exec.id}`}
-              className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors"
             >
               <div className="flex items-center gap-3">
                 <span
@@ -95,7 +62,7 @@ export default function HistoryPanel({ refreshKey }: Props) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-3 text-sm">
                 <span className="text-green-600 font-medium">
                   {exec.passed} ✓
                 </span>
@@ -109,19 +76,6 @@ export default function HistoryPanel({ refreshKey }: Props) {
                     ? `${(exec.duration_ms / 1000).toFixed(1)}s`
                     : "—"}
                 </span>
-                <svg
-                  className="w-4 h-4 text-gray-300"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
               </div>
             </Link>
           );
