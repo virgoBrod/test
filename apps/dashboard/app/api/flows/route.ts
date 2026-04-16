@@ -18,14 +18,9 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("project");
 
-  if (!projectId) {
-    return Response.json({ error: "Project ID is required" }, { status: 400 });
-  }
-
+  // Default to 'sales' if no project specified or invalid
   const validProjects = ["sales"]; // TODO: Add more projects when flows are ready
-  if (!validProjects.includes(projectId)) {
-    return Response.json({ error: "Invalid project. Currently only 'sales' is available." }, { status: 400 });
-  }
+  const projectToUse = projectId && validProjects.includes(projectId) ? projectId : "sales";
 
   const collectionsDir = path.join(
     process.cwd(),
@@ -34,7 +29,7 @@ export async function GET(req: NextRequest) {
     "apps",
     "backend",
     "collections",
-    projectId
+    projectToUse
   );
 
   const flows: Flow[] = [];
@@ -79,7 +74,7 @@ export async function GET(req: NextRequest) {
   }
 
   const result: ProjectFlows = {
-    projectId,
+    projectId: projectToUse,
     flows,
   };
 
