@@ -44,7 +44,7 @@ export default function AppsPage() {
     };
 
     loadCollections();
-  }, [project?.id, refreshKey]);
+  }, [project?.id]); // Don't reload collections on refreshKey, only on project change
 
   useEffect(() => {
     const loadLastExecutions = async () => {
