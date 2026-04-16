@@ -27,11 +27,9 @@ WEB_USER_PASSWORD=your_password
 
 ## Supported Projects
 
-- **sales** - SALES/DEMO (https://web.inovisec.com, https://mb.inovisec.com)
-- **movilidad_medellin** - Movilidad Medellín
-- **medellin** - Medellín
-- **lv** - LV
-- **amva** - AMVA
+- **sales** - SALES/DEMO (https://web.inovisec.com, https://mb.inovisec.com) ✅
+
+> **Note**: Multi-project support is ready! Add new projects by creating collections in `collections/{project_id}/` and environments in `environments/projects/`.
 
 ## Running Tests
 
@@ -44,29 +42,19 @@ node run-flow.js --project <project> --flow <flow> --type <mobile|web>
 # Examples:
 node run-flow.js --project sales --flow auth --type mobile
 node run-flow.js --project sales --flow web-flow --type web
-node run-flow.js --project movilidad_medellin --flow mobile-flow --type mobile
+# TODO: Add more projects when flows are ready
 ```
 
 ### NPM Scripts
 
 ```bash
-# All tests for a project (defaults to auth flow)
+# Sales project (currently the only one with flows)
 pnpm test:sales
-pnpm test:movilidad
-pnpm test:medellin
-pnpm test:lv
-pnpm test:amva
-
-# Specific flows
 pnpm test:sales:auth
 pnpm test:sales:mobile
 pnpm test:sales:web
 
-pnpm test:movilidad:auth
-pnpm test:movilidad:mobile
-pnpm test:movilidad:web
-
-# Legacy commands (uses sales project by default)
+# Legacy commands (defaults to sales project)
 pnpm test:auth
 pnpm test:mobile-flow
 pnpm test:web-flow
@@ -74,7 +62,7 @@ pnpm test:web-flow
 
 ### CLI Options
 
-- `--project <name>` - Project to test (sales, movilidad_medellin, medellin, lv, amva)
+- `--project <name>` - Project to test (currently only 'sales')
 - `--flow <name>` - Flow to execute (auth, mobile-flow, web-flow)
 - `--type <type>` - Test type (mobile, web)
 
@@ -83,30 +71,18 @@ pnpm test:web-flow
 ```
 apps/backend/
 ├── collections/
-│   ├── sales/
-│   │   ├── auth.postman_collection.json
-│   │   ├── mobile-flow.postman_collection.json
-│   │   └── web-flow.postman_collection.json
-│   ├── movilidad_medellin/
-│   │   └── ... (empty placeholders)
-│   ├── medellin/
-│   │   └── ... (empty placeholders)
-│   ├── lv/
-│   │   └── ... (empty placeholders)
-│   └── amva/
-│       └── ... (empty placeholders)
+│   └── sales/
+│       ├── auth.postman_collection.json
+│       ├── mobile-flow.postman_collection.json
+│       └── web-flow.postman_collection.json
 ├── environments/
 │   └── projects/
-│       ├── sales.postman_environment.json
-│       ├── web.sales.postman_environment.json
-│       ├── movilidad_medellin.postman_environment.json
-│       ├── web.movilidad_medellin.postman_environment.json
-│       └── ... (one for each project)
+│       ├── sales.postman_environment.json (mobile)
+│       └── web.sales.postman_environment.json (web)
 ├── newman/
 │   └── reports/
-│       ├── sales/
-│       │   └── <flow>-<timestamp>.html
-│       └── ... (reports organized by project)
+│       └── sales/
+│           └── <flow>-<timestamp>.html
 ├── run-flow.js                 # Unified runner
 ├── run-tests.js                # Legacy auth runner
 ├── run-mobile-flow.js          # Legacy mobile runner

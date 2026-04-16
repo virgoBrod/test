@@ -11,10 +11,13 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const limit = Number(searchParams.get("limit") ?? 20);
+  const offset = Number(searchParams.get("offset") ?? 0);
   const projectId = searchParams.get("project_id");
   const collection = searchParams.get("collection");
+  const status = searchParams.get("status");
 
   let sql = `SELECT * FROM executions`;
+  let countSql = `SELECT COUNT(*) as total FROM executions`;
   const args: (string | number)[] = [];
   const conditions: string[] = [];
 
@@ -28,14 +31,24 @@ export async function GET(req: NextRequest) {
     args.push(collection);
   }
 
-  if (conditions.length > 0) {
-    sql += ` WHERE ` + conditions.join(` AND `);
+  if (status && status !== "all") {
+    conditions.push(`status = ?`);
+    args.push(status);
   }
 
-  sql += ` ORDER BY started_at DESC LIMIT ?`;
-  args.push(limit);
+  const whereClause = conditions.length > 0 ? ` WHERE ` + conditions.join(` AND `) : ``;
+  sql += whereClause + ` ORDER BY started_at DESC LIMIT ? OFFSET ?`;
+  countSql += whereClause;
 
-  const rows = await db.execute({ sql, args });
+  const countResult = await db.execute({ sql: countSql, args });
+  const total = Number((countResult.rows[0] as unknown as { total: number }).total);
 
-  return Response.json(rows.rows);
+  const rows = await db.execute({ sql, args: [...args, limit, offset] });
+
+  return Response.json({
+    executions: rows.rows,
+    total,
+    limit,
+    offset,
+  });
 }

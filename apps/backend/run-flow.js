@@ -18,7 +18,7 @@ const project = argMap.project || 'sales';
 const flow = argMap.flow || 'auth';
 const type = argMap.type || 'mobile';
 
-const validProjects = ['sales', 'movilidad_medellin', 'medellin', 'lv', 'amva'];
+const validProjects = ['sales']; // TODO: Add more projects when flows are ready
 const validFlows = ['auth', 'mobile-flow', 'web-flow'];
 const validTypes = ['mobile', 'web'];
 

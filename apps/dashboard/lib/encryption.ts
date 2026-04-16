@@ -1,19 +1,29 @@
-const ENCRYPTION_KEY_ID = "broadsec-dashboard-v1";
-
-async function getKey(): Promise<CryptoKey> {
+async function deriveKey(): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    encoder.encode(ENCRYPTION_KEY_ID.padEnd(32, "0").slice(0, 32)),
-    { name: "AES-GCM" },
+    encoder.encode(process.env.BULLSEC_ENCRYPTION_KEY!),
+    "PBKDF2",
+    false,
+    ["deriveBits", "deriveKey"]
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: encoder.encode("broadsec-dashboard-salt-v1"),
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
     false,
     ["encrypt", "decrypt"]
   );
-  return keyMaterial;
 }
 
 export async function encrypt(plaintext: string): Promise<string> {
-  const key = await getKey();
+  const key = await deriveKey();
   const encoder = new TextEncoder();
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
@@ -31,7 +41,7 @@ export async function encrypt(plaintext: string): Promise<string> {
 }
 
 export async function decrypt(ciphertext: string): Promise<string> {
-  const key = await getKey();
+  const key = await deriveKey();
   const combined = Uint8Array.from(atob(ciphertext), (c) => c.charCodeAt(0));
 
   const iv = combined.slice(0, 12);

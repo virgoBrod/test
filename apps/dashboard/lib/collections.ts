@@ -78,7 +78,7 @@ export function getCollection(id: CollectionId, projectId: string = "sales"): Co
   const baseCollection = BASE_COLLECTIONS.find((c) => c.id === id);
   if (!baseCollection) return undefined;
 
-  const validProjects = ["sales", "movilidad_medellin", "medellin", "lv", "amva"];
+  const validProjects = ["sales"]; // TODO: Add more projects when flows are ready
   const project = validProjects.includes(projectId) ? projectId : "sales";
 
   const collectionFile = path.join(
@@ -102,7 +102,7 @@ export function getCollection(id: CollectionId, projectId: string = "sales"): Co
 }
 
 export function getAvailableFlows(projectId: string): CollectionConfig[] {
-  const validProjects = ["sales", "movilidad_medellin", "medellin", "lv", "amva"];
+  const validProjects = ["sales"]; // TODO: Add more projects when flows are ready
   const project = validProjects.includes(projectId) ? projectId : "sales";
 
   const projectCollectionsDir = path.join(COLLECTIONS_DIR, project);

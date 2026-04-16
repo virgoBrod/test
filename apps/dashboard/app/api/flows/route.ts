@@ -22,9 +22,9 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: "Project ID is required" }, { status: 400 });
   }
 
-  const validProjects = ["sales", "movilidad_medellin", "medellin", "lv", "amva"];
+  const validProjects = ["sales"]; // TODO: Add more projects when flows are ready
   if (!validProjects.includes(projectId)) {
-    return Response.json({ error: "Invalid project" }, { status: 400 });
+    return Response.json({ error: "Invalid project. Currently only 'sales' is available." }, { status: 400 });
   }
 
   const collectionsDir = path.join(

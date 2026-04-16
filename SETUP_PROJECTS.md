@@ -2,32 +2,14 @@
 
 ## Proyectos Disponibles
 
-El sistema ahora soporta múltiples proyectos con flows de test separados:
+El sistema soporta múltiples proyectos con flows de test separados. Actualmente:
 
-1. **sales** - SALES/DEMO
+1. **sales** - SALES/DEMO ✅
    - Mobile: https://mb.inovisec.com
    - Web: https://web.inovisec.com
-   - ✅ Flows completos (auth, mobile-flow, web-flow)
+   - Flows: auth, mobile-flow, web-flow
 
-2. **movilidad_medellin** - Movilidad Medellín
-   - Mobile: https://movilidad.broadsec.com
-   - Web: https://movilidad.broadsec.com
-   - 🔲 Flows vacíos (listos para configurar)
-
-3. **medellin** - Medellín
-   - Mobile: https://medellin.broadsec.com
-   - Web: https://medellin.broadsec.com
-   - 🔲 Flows vacíos (listos para configurar)
-
-4. **lv** - LV
-   - Mobile: https://lv.inovisec.com
-   - Web: https://lv.inovisec.com/lv
-   - 🔲 Flows vacíos (listos para configurar)
-
-5. **amva** - AMVA
-   - Mobile: https://amva.broadsec.com
-   - Web: https://amva.broadsec.com
-   - 🔲 Flows vacíos (listos para configurar)
+> **Note**: La infraestructura para múltiples proyectos está lista. Para agregar un nuevo proyecto, creá las colecciones y environments correspondientes.
 
 ## Cómo Agregar Flows a un Proyecto
 

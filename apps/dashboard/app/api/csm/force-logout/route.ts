@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
 import { initDb, db } from "@/lib/db";
 
+const CSM_TOKENS: Record<string, string> = {
+  sales: process.env.CSM_TOKEN_SALES || "",
+  medellin: process.env.CSM_TOKEN_MEDELLIN || "",
+  movilidad_medellin: process.env.CSM_TOKEN_MOVILIDAD_MEDELLIN || "",
+  lv: process.env.CSM_TOKEN_LV || "",
+};
+
 export async function POST(req: NextRequest) {
   await initDb();
   const body = await req.json();
@@ -8,7 +15,14 @@ export async function POST(req: NextRequest) {
 
   if (!project_id || !user_identifier) {
     return Response.json(
-      { success: false, message: "Missing project_id or user_identifier" },
+      { success: false, message: "Falta project_id o user_identifier" },
+      { status: 400 }
+    );
+  }
+
+  if (!user_identifier.includes("@")) {
+    return Response.json(
+      { success: false, message: "El identificador debe ser un email válido" },
       { status: 400 }
     );
   }
@@ -20,27 +34,43 @@ export async function POST(req: NextRequest) {
 
   if (!projectResult.rows.length) {
     return Response.json(
-      { success: false, message: "Project not found" },
+      { success: false, message: "Proyecto no encontrado" },
       { status: 404 }
+    );
+  }
+
+  const csmToken = CSM_TOKENS[project_id];
+  if (!csmToken) {
+    return Response.json(
+      { success: false, message: "Token CSM no configurado para este proyecto" },
+      { status: 500 }
     );
   }
 
   const baseUrl = projectResult.rows[0].base_url_mobile as string;
 
   try {
-    const response = await fetch(`${baseUrl}/api/auth/force-logout`, {
+    const response = await fetch(`${baseUrl}/api/logout_force`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_identifier }),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${csmToken}`,
+      },
+      body: JSON.stringify({ email: user_identifier }),
     });
 
+    const responseData = await response.json().catch(() => ({}));
+
     if (response.ok) {
-      return Response.json({ success: true, message: "Sesión cerrada exitosamente" });
+      return Response.json({
+        success: true,
+        message: responseData.message || "Sesión cerrada exitosamente",
+        data: responseData.data,
+      });
     } else {
-      const errorData = await response.json().catch(() => ({}));
       return Response.json({
         success: false,
-        message: errorData.message || "Error al cerrar sesión",
+        message: responseData.message || "Error al cerrar sesión",
       }, { status: response.status });
     }
   } catch {
