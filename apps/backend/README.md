@@ -1,6 +1,6 @@
 # Backend API Tests
 
-Newman test suite for the Broadsec REST APIs.
+Newman test suite for the Broadsec REST APIs with multi-project support.
 
 ## Requirements
 
@@ -23,60 +23,111 @@ MOBILE_USER_PASSWORD=your_password
 # Web
 WEB_USER_EMAIL=your_email
 WEB_USER_PASSWORD=your_password
-WEB_BASE_URL=https://web.inovisec.com
 ```
 
-## Running tests individually
+## Supported Projects
 
-### Auth
+- **sales** - SALES/DEMO (https://web.inovisec.com, https://mb.inovisec.com)
+- **movilidad_medellin** - Movilidad Medellín
+- **medellin** - Medellín
+- **lv** - LV
+- **amva** - AMVA
+
+## Running Tests
+
+### New Unified Runner (Recommended)
 
 ```bash
+# Run specific project and flow
+node run-flow.js --project <project> --flow <flow> --type <mobile|web>
+
+# Examples:
+node run-flow.js --project sales --flow auth --type mobile
+node run-flow.js --project sales --flow web-flow --type web
+node run-flow.js --project movilidad_medellin --flow mobile-flow --type mobile
+```
+
+### NPM Scripts
+
+```bash
+# All tests for a project (defaults to auth flow)
+pnpm test:sales
+pnpm test:movilidad
+pnpm test:medellin
+pnpm test:lv
+pnpm test:amva
+
+# Specific flows
+pnpm test:sales:auth
+pnpm test:sales:mobile
+pnpm test:sales:web
+
+pnpm test:movilidad:auth
+pnpm test:movilidad:mobile
+pnpm test:movilidad:web
+
+# Legacy commands (uses sales project by default)
 pnpm test:auth
-```
-
-Validates login and logout against the auth endpoint.
-
-### Mobile Flow
-
-```bash
 pnpm test:mobile-flow
-```
-
-Full mobile operator flow: Login → emergencies, incidents, state changes → Logout.
-
-### Web Flow
-
-```bash
 pnpm test:web-flow
 ```
 
-Full web operator flow: Login → Home data (grouped types, departments, zones, incidents) → Incident detail (locations, transcription, video, images, CallAI) → Dispatch (dispatch, in-site, close) → Logout.
+### CLI Options
 
----
+- `--project <name>` - Project to test (sales, movilidad_medellin, medellin, lv, amva)
+- `--flow <name>` - Flow to execute (auth, mobile-flow, web-flow)
+- `--type <type>` - Test type (mobile, web)
 
-Each command generates an HTML report at `newman/report.html`.
-
-## Project structure
+## Project Structure
 
 ```
 apps/backend/
 ├── collections/
-│   ├── auth.postman_collection.json          # Login, Logout
-│   ├── mobile-flow.postman_collection.json   # Full mobile operator flow
-│   └── web-flow.postman_collection.json      # Full web operator flow
+│   ├── sales/
+│   │   ├── auth.postman_collection.json
+│   │   ├── mobile-flow.postman_collection.json
+│   │   └── web-flow.postman_collection.json
+│   ├── movilidad_medellin/
+│   │   └── ... (empty placeholders)
+│   ├── medellin/
+│   │   └── ... (empty placeholders)
+│   ├── lv/
+│   │   └── ... (empty placeholders)
+│   └── amva/
+│       └── ... (empty placeholders)
 ├── environments/
-│   ├── mobile.postman_environment.json       # Mobile base environment
-│   └── web.postman_environment.json          # Web base environment
+│   └── projects/
+│       ├── sales.postman_environment.json
+│       ├── web.sales.postman_environment.json
+│       ├── movilidad_medellin.postman_environment.json
+│       ├── web.movilidad_medellin.postman_environment.json
+│       └── ... (one for each project)
 ├── newman/
-│   └── report.html                           # Generated test report
-├── run-tests.js                              # Auth runner
-├── run-mobile-flow.js                        # Mobile flow runner
-├── run-web-flow.js                           # Web flow runner
+│   └── reports/
+│       ├── sales/
+│       │   └── <flow>-<timestamp>.html
+│       └── ... (reports organized by project)
+├── run-flow.js                 # Unified runner
+├── run-tests.js                # Legacy auth runner
+├── run-mobile-flow.js          # Legacy mobile runner
+├── run-web-flow.js             # Legacy web runner
 └── package.json
 ```
 
-## How it works
+## How It Works
 
-Each runner loads `config/.env` via `dotenv` and injects credentials as `envVar` into Newman at runtime. Credentials are never hardcoded in the collection or environment files.
+1. **Project Selection**: The `--project` flag selects which project's collections and environments to use
+2. **Base URLs**: Each project has its own base URLs configured in `environments/projects/<project>.postman_environment.json`
+3. **Credentials**: Loaded from `config/.env` and injected at runtime via `envVar`
+4. **Reports**: Generated at `newman/reports/<project>/<flow>-<timestamp>.html`
 
-Tokens and dynamic values (incident IDs, carbyne IDs, agent history IDs, etc.) are passed between requests using `pm.environment.set()` inside each request's test script — no manual setup needed between steps.
+## Adding New Project Flows
+
+1. Create collection files in `collections/<project_id>/`
+2. Create environment files in `environments/projects/` (mobile + web)
+3. Add project entry to dashboard database with correct base URLs
+4. Test with: `node run-flow.js --project <project_id> --flow <flow_name>`
+
+## Legacy Compatibility
+
+The old runner scripts (`run-tests.js`, `run-mobile-flow.js`, `run-web-flow.js`) still work and default to the **sales** project for backward compatibility.

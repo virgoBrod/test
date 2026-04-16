@@ -1,0 +1,624 @@
+{
+  "info": {
+    "name": "Mobile Flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna token', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.token).to.be.a('string');",
+              "  pm.environment.set('authToken', body.token);",
+              "});",
+              "",
+              "pm.test('Retorna idAgent y nameAgent', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.idAgent).to.be.a('number');",
+              "  pm.expect(body.nameAgent).to.be.a('string');",
+              "  pm.environment.set('agentId', body.idAgent);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"callsign\": \"{{callsign}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth"]
+        }
+      }
+    },
+    {
+      "name": "GetAgentState",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna agent_id y state', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.agent_id).to.be.a('string');",
+              "  pm.expect(body.state).to.be.a('string');",
+              "  pm.environment.set('agentState', body.state);",
+              "});",
+              "",
+              "pm.test('Estructura active_case correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.active_case) {",
+              "    pm.expect(body.active_case.agent_history_id).to.be.a('number');",
+              "    pm.expect(body.active_case.case_state).to.be.a('string');",
+              "    pm.expect(body.active_case.flags).to.be.an('object');",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/state?agent_id={{agentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "state"],
+          "query": [
+            {
+              "key": "agent_id",
+              "value": "{{agentId}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "EnsureAvailable",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const state = pm.environment.get('agentState');",
+              "if (state === 'available') {",
+              "  pm.execution.skipRequest();",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Agente cambiado a available', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.newState).to.be.a('string');",
+              "  pm.environment.set('agentState', body.newState);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{agentId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agentStates",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agentStates"]
+        }
+      }
+    },
+    {
+      "name": "GetActionTypes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna array de action types', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "  pm.expect(body.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test('Estructura action type correcta y guarda IDs', () => {",
+              "  const body = pm.response.json();",
+              "  const first = body[0];",
+              "  pm.expect(first.id).to.be.a('number');",
+              "  pm.expect(first.name).to.be.a('string');",
+              "  pm.expect(first.subitems).to.be.an('array');",
+              "  pm.environment.set('actionId', first.id);",
+              "  if (first.subitems.length > 0) {",
+              "    pm.expect(first.subitems[0].id).to.be.a('number');",
+              "    pm.expect(first.subitems[0].name).to.be.a('string');",
+              "    pm.environment.set('subitemId', first.subitems[0].id);",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/action",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "action"]
+        }
+      }
+    },
+    {
+      "name": "CreateTask",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.environment.set('startTime', Date.now());",
+              "pm.environment.set('endTime', Date.now() + 600000);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200 o 201', () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "",
+              "pm.test('Retorna status y message', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.be.a('string');",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna data con id y guarda taskId', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('object');",
+              "  pm.expect(body.data.id).to.be.a('number');",
+              "  pm.environment.set('taskId', body.data.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agentMovId\": {{agentId}},\n  \"startTime\": {{startTime}},\n  \"endTime\": {{endTime}},\n  \"actionId\": {{actionId}},\n  \"subitemId\": {{subitemId}},\n  \"polygon\": \"test-polygon\",\n  \"status\": \"ACTIVE\",\n  \"agent_id\": {{agentId}},\n  \"instructions\": \"Test instructions\",\n  \"civic_location\": \"Test civic location\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/actions",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "actions"]
+        }
+      }
+    },
+    {
+      "name": "GetTasks",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const today = new Date();",
+              "const yyyy = today.getFullYear();",
+              "const mm = String(today.getMonth() + 1).padStart(2, '0');",
+              "const dd = String(today.getDate()).padStart(2, '0');",
+              "pm.environment.set('today', `${yyyy}-${mm}-${dd}`);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna status y message', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.be.a('string');",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna data como array', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/actions/{{agentId}}?date={{today}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "actions", "{{agentId}}"],
+          "query": [
+            {
+              "key": "date",
+              "value": "{{today}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "UpdateTask",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.environment.set('startTime', Date.now());",
+              "pm.environment.set('endTime', Date.now() + 600000);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna status y message', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.be.a('string');",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna data con estructura correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('object');",
+              "  pm.expect(body.data.id).to.be.a('number');",
+              "  pm.expect(body.data.actionId).to.be.a('number');",
+              "  pm.expect(body.data.actionName).to.be.a('string');",
+              "  pm.expect(body.data.subitemId).to.be.a('number');",
+              "  pm.expect(body.data.subitemName).to.be.a('string');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{agentId}},\n  \"startTime\": {{startTime}},\n  \"endTime\": {{endTime}},\n  \"actionId\": {{actionId}},\n  \"subitemId\": {{subitemId}},\n  \"polygon\": \"updated-polygon\",\n  \"status\": \"UPDATED\",\n  \"instructions\": \"Updated instructions\",\n  \"civic_location\": \"Updated civic location\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/actions/{{taskId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "actions", "{{taskId}}"]
+        }
+      }
+    },
+    {
+      "name": "DeleteTask",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna status y message', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.be.a('string');",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna data con id', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('object');",
+              "  pm.expect(body.data.id).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{agentId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/actions/{{taskId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "actions", "{{taskId}}"]
+        }
+      }
+    },
+    {
+      "name": "ChangeAgentState — Available to Unavailable",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna message y agent_id', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "  pm.expect(body.agent_id).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna previousState y newState', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.previousState).to.be.a('string');",
+              "  pm.expect(body.newState).to.be.a('string');",
+              "  pm.expect(body.history_id).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{agentId}},\n  \"note\": \"Test unavailability reason\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agentStates",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agentStates"]
+        }
+      }
+    },
+    {
+      "name": "ChangeAgentState — Unavailable to Available",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna message y agent_id', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "  pm.expect(body.agent_id).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna previousState y newState', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.previousState).to.be.a('string');",
+              "  pm.expect(body.newState).to.be.a('string');",
+              "  pm.expect(body.history_id).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{agentId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agentStates",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agentStates"]
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna message', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Token limpiado', () => {",
+              "  pm.environment.unset('authToken');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "logout"]
+        }
+      }
+    }
+  ]
+}

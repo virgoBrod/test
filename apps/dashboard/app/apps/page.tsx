@@ -1,25 +1,57 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { COLLECTIONS } from "@/lib/collections";
 import TestCard from "@/components/TestCard";
 import { useProject } from "@/components/ProjectContext";
 import { showToast } from "@/components/Toast";
 import { downloadPDF } from "@/lib/pdf";
-import type { Execution, ExecutionResult } from "@/types";
+import type { Execution, ExecutionResult, CollectionType } from "@/types";
+
+interface Collection {
+  id: string;
+  name: string;
+  description: string;
+  type: CollectionType;
+  hasAssertions: boolean;
+}
 
 export default function AppsPage() {
   const [activeTab, setActiveTab] = useState<"mobile" | "web">("mobile");
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [lastExecutions, setLastExecutions] = useState<Record<string, Execution>>({});
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loading, setLoading] = useState(true);
   const { project } = useProject();
 
   useEffect(() => {
+    if (!project?.id) return;
+
+    const loadCollections = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/flows?project=${project.id}`);
+        if (!res.ok) throw new Error("Failed to load flows");
+        const data = await res.json();
+        setCollections(data.flows || []);
+      } catch (err) {
+        console.error("Error loading flows:", err);
+        setCollections([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCollections();
+  }, [project?.id, refreshKey]);
+
+  useEffect(() => {
     const loadLastExecutions = async () => {
+      if (!project?.id) return;
+
       const results: Record<string, Execution> = {};
-      for (const col of COLLECTIONS) {
+      for (const col of collections) {
         try {
-          const res = await fetch(`/api/executions?collection=${encodeURIComponent(col.name)}&limit=1`);
+          const res = await fetch(`/api/executions?collection=${encodeURIComponent(col.name)}&project=${project.id}&limit=1`);
           if (!res.ok) continue;
           const data = await res.json();
           if (data.length > 0) {
@@ -31,8 +63,11 @@ export default function AppsPage() {
       }
       setLastExecutions(results);
     };
-    loadLastExecutions();
-  }, [refreshKey]);
+
+    if (collections.length > 0) {
+      loadLastExecutions();
+    }
+  }, [collections, project?.id, refreshKey]);
 
   const handleExport = async (executionId: number) => {
     try {
@@ -54,16 +89,32 @@ export default function AppsPage() {
     showToast("Ejecución completada", "success");
   };
 
-  const mobileCollections = COLLECTIONS.filter((c) => c.type === "mobile");
-  const webCollections = COLLECTIONS.filter((c) => c.type === "web");
-  const displayCollections = activeTab === "mobile" ? mobileCollections : webCollections;
+  const filteredCollections = collections.filter((c) => c.type === activeTab);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Apps</h1>
+          <p className="text-gray-500 mt-1 text-sm">
+            Ejecutá tests de Mobile y Web
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-48 bg-gray-100 animate-pulse rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Apps</h1>
         <p className="text-gray-500 mt-1 text-sm">
-          Ejecutá tests de Mobile y Web
+          Ejecutá tests de Mobile y Web {project?.name ? `para ${project.name}` : ""}
         </p>
       </div>
 
@@ -91,10 +142,13 @@ export default function AppsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {displayCollections.map((collection) => (
+        {filteredCollections.map((collection) => (
           <TestCard
             key={collection.id}
-            collection={collection}
+            collectionId={collection.id}
+            collectionName={collection.name}
+            description={collection.description || `${collection.name} flow for ${project?.name}`}
+            type={collection.type}
             lastExecution={lastExecutions[collection.id]}
             projectId={project?.id}
             onExecutionComplete={handleExecutionComplete}
@@ -103,9 +157,9 @@ export default function AppsPage() {
         ))}
       </div>
 
-      {displayCollections.length === 0 && (
+      {filteredCollections.length === 0 && !loading && (
         <div className="text-center py-12 text-gray-400">
-          No hay collections para esta categoría
+          No hay flows disponibles para {activeTab} en este proyecto
         </div>
       )}
     </div>

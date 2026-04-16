@@ -1,25 +1,57 @@
 "use client";
 
 import { useState } from "react";
-import type { CollectionConfig } from "@/lib/collections";
-import type { Execution, Credentials } from "@/types";
+import type { CollectionType } from "@/types";
 import CredentialsModal from "./CredentialsModal";
 import LiveExecution from "./LiveExecution";
 import { RunEvent } from "@/lib/runner";
+import { showToast } from "./Toast";
+
+interface CollectionData {
+  id: string;
+  name: string;
+  description: string;
+  type: CollectionType;
+}
 
 interface Props {
-  collection: CollectionConfig;
+  collectionId: string;
+  collectionName: string;
+  description?: string;
+  type: CollectionType;
   lastExecution?: Execution | null;
   projectId?: string;
   onExecutionComplete?: () => void;
   onExport?: (executionId: number) => void;
 }
 
-export default function TestCard({ collection, lastExecution, projectId, onExecutionComplete, onExport }: Props) {
+interface Execution {
+  id: number;
+  status: string;
+  finished_at: string;
+}
+
+export default function TestCard({ 
+  collectionId, 
+  collectionName, 
+  description,
+  type,
+  lastExecution, 
+  projectId, 
+  onExecutionComplete, 
+  onExport 
+}: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [events, setEvents] = useState<RunEvent[]>([]);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
+
+  const collection: CollectionData = {
+    id: collectionId,
+    name: collectionName,
+    description: description || collectionName,
+    type,
+  };
 
   const handleRun = async (credentials: Record<string, string>) => {
     setModalOpen(false);
@@ -27,51 +59,71 @@ export default function TestCard({ collection, lastExecution, projectId, onExecu
     setRunning(true);
     setDone(false);
 
-    const res = await fetch("/api/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ collectionId: collection.id, credentials, projectId }),
-    });
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          collectionId: collection.id as any, 
+          credentials, 
+          projectId,
+          projectName: projectId // Pass project ID to use in runner
+        }),
+      });
 
-    if (!res.body) {
-      setRunning(false);
-      setDone(true);
-      return;
-    }
+      if (!res.ok) {
+        const error = await res.text();
+        showToast(`Error: ${error}`, "error");
+        setRunning(false);
+        setDone(true);
+        return;
+      }
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
+      if (!res.body) {
+        setRunning(false);
+        setDone(true);
+        return;
+      }
 
-    while (true) {
-      const { done: streamDone, value } = await reader.read();
-      if (streamDone) break;
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n\n");
-      buffer = lines.pop() ?? "";
+      while (true) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
 
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          try {
-            const event: RunEvent = JSON.parse(line.slice(6));
-            setEvents((prev) => [...prev, event]);
-            if (event.type === "done" || event.type === "error") {
-              setRunning(false);
-              setDone(true);
-              onExecutionComplete?.();
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const event: RunEvent = JSON.parse(line.slice(6));
+              setEvents((prev) => [...prev, event]);
+              if (event.type === "done" || event.type === "error") {
+                setRunning(false);
+                setDone(true);
+                onExecutionComplete?.();
+              }
+            } catch {
+              // ignore malformed lines
             }
-          } catch {
-            // ignore malformed lines
           }
         }
       }
+    } catch (err) {
+      console.error("Execution error:", err);
+      setRunning(false);
+      setDone(true);
+      showToast("Error al ejecutar el test", "error");
     }
   };
 
   const onExecuteClick = async () => {
     if (!projectId) {
-      setModalOpen(true);
+      showToast("Seleccioná un proyecto primero", "error");
       return;
     }
 
@@ -80,15 +132,15 @@ export default function TestCard({ collection, lastExecution, projectId, onExecu
       const data = await res.json();
 
       if (data.credentials) {
-        const creds = data.credentials as Credentials;
+        const creds = data.credentials as any;
         let formattedCreds: Record<string, string> = {};
 
-        if (collection.type === "mobile" && creds.mobile) {
+        if (type === "mobile" && creds.mobile) {
           formattedCreds = {
             callsign: creds.mobile.callsign,
             password: creds.mobile.password,
           };
-        } else if (collection.type === "web" && creds.web) {
+        } else if (type === "web" && creds.web) {
           formattedCreds = {
             webEmail: creds.web.email,
             webPassword: creds.web.password,
@@ -139,9 +191,9 @@ export default function TestCard({ collection, lastExecution, projectId, onExecu
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              {collection.name}
+              {collectionName}
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5">{collection.description}</p>
+            <p className="text-sm text-gray-500 mt-0.5">{description}</p>
           </div>
           {statusBadge}
         </div>

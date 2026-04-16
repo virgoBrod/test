@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import type { CollectionType } from "@/types";
 
 export type CollectionId = "auth" | "mobile-flow" | "web-flow";
@@ -11,6 +12,7 @@ export interface CollectionConfig {
   environmentFile: string;
   credentialFields: CredentialField[];
   type: CollectionType;
+  projectId?: string;
 }
 
 export interface CredentialField {
@@ -28,25 +30,22 @@ const COLLECTIONS_DIR = path.join(
   "backend",
   "collections"
 );
+
 const ENVIRONMENTS_DIR = path.join(
   process.cwd(),
   "..",
   "..",
   "apps",
   "backend",
-  "environments"
+  "environments",
+  "projects"
 );
 
-export const COLLECTIONS: CollectionConfig[] = [
+const BASE_COLLECTIONS: Omit<CollectionConfig, "collectionFile" | "environmentFile" | "projectId">[] = [
   {
     id: "auth",
     name: "Auth",
     description: "Flujo de autenticación general",
-    collectionFile: path.join(COLLECTIONS_DIR, "auth.postman_collection.json"),
-    environmentFile: path.join(
-      ENVIRONMENTS_DIR,
-      "mobile.postman_environment.json"
-    ),
     type: "mobile",
     credentialFields: [
       { key: "callsign", label: "Callsign", type: "text", envVar: "callsign" },
@@ -57,14 +56,6 @@ export const COLLECTIONS: CollectionConfig[] = [
     id: "mobile-flow",
     name: "Mobile Flow",
     description: "Flujo completo de la app móvil",
-    collectionFile: path.join(
-      COLLECTIONS_DIR,
-      "mobile-flow.postman_collection.json"
-    ),
-    environmentFile: path.join(
-      ENVIRONMENTS_DIR,
-      "mobile.postman_environment.json"
-    ),
     type: "mobile",
     credentialFields: [
       { key: "callsign", label: "Callsign", type: "text", envVar: "callsign" },
@@ -75,14 +66,6 @@ export const COLLECTIONS: CollectionConfig[] = [
     id: "web-flow",
     name: "Web Flow",
     description: "Flujo completo del portal web",
-    collectionFile: path.join(
-      COLLECTIONS_DIR,
-      "web-flow.postman_collection.json"
-    ),
-    environmentFile: path.join(
-      ENVIRONMENTS_DIR,
-      "web.postman_environment.json"
-    ),
     type: "web",
     credentialFields: [
       { key: "webEmail", label: "Email", type: "text", envVar: "webEmail" },
@@ -91,6 +74,55 @@ export const COLLECTIONS: CollectionConfig[] = [
   },
 ];
 
-export function getCollection(id: CollectionId): CollectionConfig | undefined {
-  return COLLECTIONS.find((c) => c.id === id);
+export function getCollection(id: CollectionId, projectId: string = "sales"): CollectionConfig | undefined {
+  const baseCollection = BASE_COLLECTIONS.find((c) => c.id === id);
+  if (!baseCollection) return undefined;
+
+  const validProjects = ["sales", "movilidad_medellin", "medellin", "lv", "amva"];
+  const project = validProjects.includes(projectId) ? projectId : "sales";
+
+  const collectionFile = path.join(
+    COLLECTIONS_DIR,
+    project,
+    `${id}.postman_collection.json`
+  );
+
+  const envSuffix = baseCollection.type === "mobile" ? "" : `.${project}`;
+  const environmentFile = path.join(
+    ENVIRONMENTS_DIR,
+    `${project}${envSuffix}.postman_environment.json`
+  );
+
+  return {
+    ...baseCollection,
+    collectionFile,
+    environmentFile,
+    projectId: project,
+  };
+}
+
+export function getAvailableFlows(projectId: string): CollectionConfig[] {
+  const validProjects = ["sales", "movilidad_medellin", "medellin", "lv", "amva"];
+  const project = validProjects.includes(projectId) ? projectId : "sales";
+
+  const projectCollectionsDir = path.join(COLLECTIONS_DIR, project);
+  
+  if (!fs.existsSync(projectCollectionsDir)) {
+    return [];
+  }
+
+  const files = fs.readdirSync(projectCollectionsDir);
+  const flows: CollectionConfig[] = [];
+
+  files.forEach((file) => {
+    if (file.endsWith(".postman_collection.json")) {
+      const flowId = file.replace(".postman_collection.json", "") as CollectionId;
+      const config = getCollection(flowId, project);
+      if (config) {
+        flows.push(config);
+      }
+    }
+  });
+
+  return flows;
 }

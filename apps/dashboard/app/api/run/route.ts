@@ -12,13 +12,16 @@ export async function POST(req: NextRequest) {
   await initDb();
 
   const body = await req.json();
-  const { collectionId, credentials, projectId } = body as {
+  const { collectionId, credentials, projectId, projectName } = body as {
     collectionId: CollectionId;
     credentials: Record<string, string>;
     projectId?: string;
+    projectName?: string;
   };
 
-  const config = getCollection(collectionId);
+  // Use projectName if provided (from new flow-based system), otherwise default to projectId
+  const projectToUse = projectName || projectId || "sales";
+  const config = getCollection(collectionId, projectToUse);
   if (!config) {
     return new Response(JSON.stringify({ error: "Collection not found" }), {
       status: 404,
@@ -27,25 +30,8 @@ export async function POST(req: NextRequest) {
 
   const envVars: { key: string; value: string }[] = [];
 
-  if (projectId) {
-    const projectResult = await db.execute({
-      sql: `SELECT * FROM projects WHERE id = ?`,
-      args: [projectId],
-    });
-
-    if (projectResult.rows.length) {
-      const project = projectResult.rows[0];
-      const baseUrlMobile = project.base_url_mobile as string;
-      const baseUrlWeb = project.base_url_web as string;
-
-      if (config.type === "mobile") {
-        envVars.push({ key: "baseUrl", value: baseUrlMobile });
-        envVars.push({ key: "webBaseUrl", value: baseUrlWeb });
-      } else {
-        envVars.push({ key: "webBaseUrl", value: baseUrlWeb });
-      }
-    }
-  }
+  // Base URLs are now loaded from environment files, no need to inject them
+  // The environment files already contain the correct base URLs for each project
 
   for (const field of config.credentialFields) {
     envVars.push({ key: field.envVar, value: credentials[field.key] ?? "" });
