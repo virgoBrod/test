@@ -87,10 +87,12 @@ export function getCollection(id: CollectionId, projectId: string = "sales"): Co
     `${id}.postman_collection.json`
   );
 
-  const envSuffix = baseCollection.type === "mobile" ? "" : `.${project}`;
+  // Mobile env: sales.postman_environment.json
+  // Web env: web.sales.postman_environment.json
+  const envPrefix = baseCollection.type === "mobile" ? "" : `web.`;
   const environmentFile = path.join(
     ENVIRONMENTS_DIR,
-    `${project}${envSuffix}.postman_environment.json`
+    `${envPrefix}${project}.postman_environment.json`
   );
 
   return {

@@ -20,12 +20,16 @@ export async function GET(req: NextRequest) {
 
   const validProjects = ["sales"]; // TODO: Add more projects when flows are ready
   
+  console.log("[Flows API] projectId:", projectId, "validProjects:", validProjects);
+  
   // If project is not in validProjects, return empty flows instead of defaulting to sales
   if (!projectId || !validProjects.includes(projectId)) {
+    console.log("[Flows API] Invalid project, returning empty flows");
     return Response.json({ projectId: projectId || "unknown", flows: [] });
   }
   
   const projectToUse = projectId;
+  console.log("[Flows API] projectToUse:", projectToUse);
 
   const collectionsDir = path.join(
     process.cwd(),
