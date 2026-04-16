@@ -24,13 +24,15 @@ export default function AppsPage() {
   const { project } = useProject();
 
   useEffect(() => {
-    if (!project?.id) return;
+    if (!project?.id) {
+      setLoading(false);
+      return;
+    }
 
     const loadCollections = async () => {
       setLoading(true);
       try {
         const res = await fetch(`/api/flows?project=${project.id}`);
-        if (!res.ok) throw new Error("Failed to load flows");
         const data = await res.json();
         setCollections(data.flows || []);
       } catch (err) {
@@ -158,8 +160,21 @@ export default function AppsPage() {
       </div>
 
       {filteredCollections.length === 0 && !loading && (
-        <div className="text-center py-12 text-gray-400">
-          No hay flows disponibles para {activeTab} en este proyecto
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-2">
+            <svg className="w-16 h-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <h3 className="text-lg font-medium text-gray-600">No hay flows establecidos</h3>
+            <p className="text-sm mt-1">
+              Este proyecto aún no tiene flows de test configurados
+            </p>
+            {project?.name && (
+              <p className="text-xs text-gray-400 mt-2">
+                Proyecto: {project.name}
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>
