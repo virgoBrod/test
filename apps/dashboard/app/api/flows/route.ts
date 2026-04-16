@@ -18,9 +18,14 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("project");
 
-  // Default to 'sales' if no project specified or invalid
   const validProjects = ["sales"]; // TODO: Add more projects when flows are ready
-  const projectToUse = projectId && validProjects.includes(projectId) ? projectId : "sales";
+  
+  // If project is not in validProjects, return empty flows instead of defaulting to sales
+  if (!projectId || !validProjects.includes(projectId)) {
+    return Response.json({ projectId: projectId || "unknown", flows: [] });
+  }
+  
+  const projectToUse = projectId;
 
   const collectionsDir = path.join(
     process.cwd(),
