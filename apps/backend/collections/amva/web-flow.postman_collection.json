@@ -1,0 +1,355 @@
+{
+  "info": {
+    "name": "Web Flow - AMVA",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "const status = pm.response.code;",
+          "if (status >= 400) {",
+          "  let body = '';",
+          "  try { body = JSON.stringify(pm.response.json(), null, 2); }",
+          "  catch (e) { body = pm.response.text(); }",
+          "  console.error('=== REQUEST FAILED ===');",
+          "  console.error('Request : ' + pm.info.requestName);",
+          "  console.error('Status  : ' + status + ' ' + pm.response.status);",
+          "  console.error('URL     : ' + pm.request.url.toString());",
+          "  console.error('Body    : ' + body);",
+          "  console.error('======================');",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna token', () => {",
+              "  pm.expect(pm.response.json().token).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna datos del calltaker', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.idCallTaker).to.be.a('string');",
+              "  pm.expect(body.fullName).to.be.a('string');",
+              "  pm.expect(body.email).to.be.a('string');",
+              "  pm.expect(body.role).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna project amva', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.project).to.eql('amva');",
+              "});",
+              "",
+              "pm.test('Retorna stationNumber como numero', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.stationNumber).to.be.a('number');",
+              "});",
+              "",
+              "const _login = pm.response.json();",
+              "pm.environment.set('webAuthToken', _login.token);",
+              "pm.environment.set('webCallTakerId', _login.idCallTaker);",
+              "pm.environment.set('webStationNumber', _login.stationNumber);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{webEmail}}\",\n  \"password\": \"{{webPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://medellin.inovisec.com/auth/login",
+          "host": ["https://medellin.inovisec.com"],
+          "path": ["auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "GetGrouped",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna array de grupos', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "  pm.expect(body.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test('Estructura de grupo correcta', () => {",
+              "  const body = pm.response.json();",
+              "  const first = body[0];",
+              "  pm.expect(first.item).to.be.a('string');",
+              "  pm.expect(first.subitems).to.be.an('array');",
+              "  if (first.subitems.length > 0) {",
+              "    pm.expect(first.subitems[0].id).to.be.a('number');",
+              "    pm.expect(first.subitems[0].nombre).to.be.a('string');",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/incidents/grouped",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "incidents", "grouped"]
+        }
+      }
+    },
+    {
+      "name": "GetDepartment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna array de departamentos', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Estructura de departamento correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.length > 0) {",
+              "    pm.expect(body[0].id).to.be.a('number');",
+              "    pm.expect(body[0].nombre).to.be.a('string');",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/department?region=",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "department"],
+          "query": [
+            {
+              "key": "region",
+              "value": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GetCity",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna array de ciudades', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "  pm.expect(body.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test('Estructura de ciudad correcta', () => {",
+              "  const body = pm.response.json();",
+              "  const first = body[0];",
+              "  pm.expect(first.id).to.be.a('number');",
+              "  pm.expect(first.nombre).to.be.a('string');",
+              "  pm.expect(first.depart_id).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/city?departamento_id=5",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "city"],
+          "query": [
+            {
+              "key": "departamento_id",
+              "value": "5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GetIncidents",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna paginacion correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.total).to.be.a('number');",
+              "  pm.expect(body.currentPage).to.be.a('number');",
+              "  pm.expect(body.totalPages).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna array de incidents', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Estructura de incident correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.data.length > 0) {",
+              "    const incident = body.data[0];",
+              "    pm.expect(incident.id).to.be.a('number');",
+              "    pm.expect(incident.phone).to.be.a('string');",
+              "    pm.expect(incident.case_state).to.be.a('string');",
+              "    pm.expect(incident.type).to.be.a('string');",
+              "  }",
+              "});",
+              "",
+              "pm.test('Retorna al menos un resultado', () => {",
+              "  pm.expect(pm.response.json().data.length).to.be.above(0);",
+              "});",
+              "",
+              "const _incidents = pm.response.json();",
+              "pm.environment.set('webIncidentId', _incidents.data[0].id);",
+              "pm.environment.set('webCarbyneId', _incidents.data[0].carbyne_id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/broad?timeRangeSelectValues=hoy&myCases=0&cities%5B%5D=5266&callTime%5B%5D=40&callTime%5B%5D=1800&startTime=00:00:40&endTime=00:30:00&rangeSelected=C&limit=50&page=1&search=",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "broad"],
+          "query": [
+            { "key": "timeRangeSelectValues", "value": "hoy" },
+            { "key": "myCases", "value": "0" },
+            { "key": "cities[]", "value": "5266" },
+            { "key": "callTime[]", "value": "40" },
+            { "key": "callTime[]", "value": "1800" },
+            { "key": "startTime", "value": "00:00:40" },
+            { "key": "endTime", "value": "00:30:00" },
+            { "key": "rangeSelected", "value": "C" },
+            { "key": "limit", "value": "50" },
+            { "key": "page", "value": "1" },
+            { "key": "search", "value": "" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna ok true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.ok).to.be.true;",
+              "});",
+              "",
+              "pm.test('Token limpiado', () => {",
+              "  pm.environment.unset('webAuthToken');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://medellin.inovisec.com/auth/logout",
+          "host": ["https://medellin.inovisec.com"],
+          "path": ["auth", "logout"]
+        }
+      }
+    }
+  ]
+}

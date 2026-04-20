@@ -1,0 +1,20 @@
+{
+  "info": {
+    "name": "WebSocket Types",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "WebSocket Types Monitor",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "wss://web.inovisec.com/ws",
+          "protocol": "wss",
+          "host": ["web", "inovisec", "com"],
+          "path": ["ws"]
+        }
+      }
+    }
+  ]
+}

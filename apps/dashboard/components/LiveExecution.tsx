@@ -1,6 +1,7 @@
 "use client";
 
 import { RunEvent } from "@/lib/runner";
+import CreateTicketButton from "./CreateTicketButton";
 
 interface Props {
   events: RunEvent[];
@@ -90,6 +91,12 @@ export default function LiveExecution({ events, running }: Props) {
                       {a.error}
                     </p>
                   ))}
+                <CreateTicketButton
+                  requestName={req.name}
+                  url={req.url}
+                  method={req.method}
+                  error={req.error}
+                />
               </div>
             )}
           </div>

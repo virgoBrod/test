@@ -6,6 +6,7 @@ const CSM_TOKENS: Record<string, string> = {
   medellin: process.env.CSM_TOKEN_MEDELLIN || "",
   movilidad_medellin: process.env.CSM_TOKEN_MOVILIDAD_MEDELLIN || "",
   lv: process.env.CSM_TOKEN_LV || "",
+  amva: process.env.CSM_TOKEN_AMVA || "",
 };
 
 export async function POST(req: NextRequest) {
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   const projectResult = await db.execute({
-    sql: `SELECT base_url_mobile FROM projects WHERE id = ?`,
+    sql: `SELECT base_url_csm FROM projects WHERE id = ?`,
     args: [project_id],
   });
 
@@ -39,6 +40,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const baseUrl = projectResult.rows[0].base_url_csm as string;
+
+  if (!baseUrl) {
+    return Response.json(
+      { success: false, message: "URL CSM no configurada para este proyecto" },
+      { status: 500 }
+    );
+  }
+
   const csmToken = CSM_TOKENS[project_id];
   if (!csmToken) {
     return Response.json(
@@ -46,8 +56,6 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-
-  const baseUrl = projectResult.rows[0].base_url_mobile as string;
 
   try {
     const response = await fetch(`${baseUrl}/api/logout_force`, {

@@ -18,8 +18,8 @@ const project = argMap.project || 'sales';
 const flow = argMap.flow || 'auth';
 const type = argMap.type || 'mobile';
 
-const validProjects = ['sales']; // TODO: Add more projects when flows are ready
-const validFlows = ['auth', 'mobile-flow', 'web-flow'];
+const validProjects = ['sales', 'amva'];
+const validFlows = ['auth', 'mobile-flow', 'web-flow', 'web-flow-form'];
 const validTypes = ['mobile', 'web'];
 
 if (!validProjects.includes(project)) {

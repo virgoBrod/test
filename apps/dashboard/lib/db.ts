@@ -51,6 +51,7 @@ export async function initDb() {
       name TEXT NOT NULL,
       base_url_mobile TEXT NOT NULL,
       base_url_web TEXT NOT NULL,
+      base_url_csm TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -71,17 +72,18 @@ export async function initDb() {
   });
 
   const projects = [
-    { id: "lv", name: "LV", base_url_mobile: "", base_url_web: "https://lv.inovisec.com/lv/" },
-    { id: "medellin", name: "Medellín", base_url_mobile: "https://medellin.broadsec.com", base_url_web: "https://medellin.broadsec.com" },
-    { id: "movilidad_medellin", name: "Movilidad Medellín", base_url_mobile: "https://movilidad.broadsec.com", base_url_web: "https://movilidad.broadsec.com" },
-    { id: "sales", name: "SALES", base_url_mobile: "https://mb.inovisec.com", base_url_web: "https://web.inovisec.com" },
+    { id: "lv", name: "LV", base_url_mobile: "", base_url_web: "https://lv.inovisec.com/lv/", base_url_csm: "https://medellin.inovisec.com/lv" },
+    { id: "medellin", name: "Medellín", base_url_mobile: "https://medellin.inovisec.com/med", base_url_web: "https://medellin.inovisec.com/med", base_url_csm: "https://medellin.inovisec.com/med" },
+    { id: "movilidad_medellin", name: "Movilidad Medellín", base_url_mobile: "https://medellin.inovisec.com/mv", base_url_web: "https://medellin.inovisec.com/mv", base_url_csm: "https://medellin.inovisec.com/mv" },
+    { id: "amva", name: "AMVA", base_url_mobile: "", base_url_web: "", base_url_csm: "https://medellin.inovisec.com/AMVA" },
+    { id: "sales", name: "SALES", base_url_mobile: "https://mb.inovisec.com", base_url_web: "https://web.inovisec.com", base_url_csm: "https://mb.inovisec.com" },
   ];
 
   for (const p of projects) {
     try {
       await db.execute({
-        sql: `INSERT OR IGNORE INTO projects (id, name, base_url_mobile, base_url_web) VALUES (?, ?, ?, ?)`,
-        args: [p.id, p.name, p.base_url_mobile, p.base_url_web],
+        sql: `INSERT OR IGNORE INTO projects (id, name, base_url_mobile, base_url_web, base_url_csm) VALUES (?, ?, ?, ?, ?)`,
+        args: [p.id, p.name, p.base_url_mobile, p.base_url_web, p.base_url_csm],
       });
     } catch {
       // ignore
@@ -96,6 +98,12 @@ export async function initDb() {
 
   try {
     await db.execute(`ALTER TABLE executions ADD COLUMN project_id TEXT`);
+  } catch {
+    // La columna ya existe
+  }
+
+  try {
+    await db.execute(`ALTER TABLE projects ADD COLUMN base_url_csm TEXT`);
   } catch {
     // La columna ya existe
   }

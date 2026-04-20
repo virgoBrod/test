@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ResponseBodyPanel from "@/components/ResponseBodyPanel";
+import CreateTicketButton from "@/components/CreateTicketButton";
 
 interface Assertion {
   name: string;
@@ -203,6 +204,12 @@ export default async function ExecutionDetailPage({
                           {a.error}
                         </div>
                       ))}
+                    <CreateTicketButton
+                      requestName={result.request_name}
+                      url={result.url}
+                      method={result.method}
+                      error={result.error}
+                    />
                   </div>
                 )}
 

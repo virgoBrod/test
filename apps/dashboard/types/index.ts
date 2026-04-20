@@ -3,6 +3,7 @@ export interface Project {
   name: string;
   base_url_mobile: string;
   base_url_web: string;
+  base_url_csm: string;
   created_at: string;
 }
 
@@ -65,4 +66,4 @@ export interface Assertion {
   error?: string;
 }
 
-export type CollectionType = "mobile" | "web";
+export type CollectionType = "mobile" | "web" | "websocket";

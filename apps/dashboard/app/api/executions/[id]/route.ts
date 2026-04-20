@@ -39,3 +39,27 @@ export async function GET(
     results: parsedResults,
   });
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const dataDir = path.join(process.cwd(), "data");
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+  await initDb();
+
+  const { id } = await params;
+
+  await db.execute({
+    sql: `DELETE FROM results WHERE execution_id = ?`,
+    args: [id],
+  });
+
+  await db.execute({
+    sql: `DELETE FROM executions WHERE id = ?`,
+    args: [id],
+  });
+
+  return Response.json({ ok: true });
+}

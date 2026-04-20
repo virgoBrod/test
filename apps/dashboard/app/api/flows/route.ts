@@ -5,7 +5,7 @@ import fs from "fs";
 interface Flow {
   id: string;
   name: string;
-  type: "mobile" | "web";
+  type: "mobile" | "web" | "websocket";
   hasAssertions: boolean;
 }
 
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("project");
 
-  const validProjects = ["sales"]; // TODO: Add more projects when flows are ready
+  const validProjects = ["sales", "amva", "medellin", "movilidad_medellin"];
   
   console.log("[Flows API] projectId:", projectId, "validProjects:", validProjects);
   
@@ -55,13 +55,16 @@ export async function GET(req: NextRequest) {
           const content = JSON.parse(fs.readFileSync(filePath, "utf-8"));
           const hasRequests = content.item && content.item.length > 0;
           
-          let type: "mobile" | "web" = "mobile";
-          if (flowName.includes("web")) {
+          let type: "mobile" | "web" | "websocket" = "mobile";
+          if (flowName.includes("websocket")) {
+            type = "websocket";
+          } else if (flowName.includes("web")) {
             type = "web";
           } else if (flowName.includes("mobile")) {
             type = "mobile";
           } else if (flowName === "auth") {
-            type = "mobile";
+            // Medellín and Movilidad use web-style auth (email/password) instead of mobile (callsign/password)
+            type = (projectToUse === "medellin" || projectToUse === "movilidad_medellin") ? "web" : "mobile";
           }
 
           flows.push({

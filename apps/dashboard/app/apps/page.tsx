@@ -16,7 +16,7 @@ interface Collection {
 }
 
 export default function AppsPage() {
-  const [activeTab, setActiveTab] = useState<"mobile" | "web">("mobile");
+  const [activeTab, setActiveTab] = useState<"mobile" | "web" | "websocket">("mobile");
   const [collections, setCollections] = useState<Collection[]>([]);
   const [lastExecutions, setLastExecutions] = useState<Record<string, Execution>>({});
   const [refreshKey, setRefreshKey] = useState(0);
@@ -140,6 +140,16 @@ export default function AppsPage() {
           }`}
         >
           Web
+        </button>
+        <button
+          onClick={() => setActiveTab("websocket")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "websocket"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          WebSocket
         </button>
       </div>
 

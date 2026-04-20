@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Web Flow",
+    "name": "Web Flow - Form",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -779,6 +779,201 @@
           "raw": "{{webBaseUrl}}/api/dispatchs",
           "host": ["{{webBaseUrl}}"],
           "path": ["api", "dispatchs"]
+        }
+      }
+    },
+    {
+      "name": "CreateForm",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200 o 201', () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "",
+              "pm.test('Retorna ok true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.ok).to.be.true;",
+              "});",
+              "",
+              "pm.test('Retorna reporte con id y guarda reportId', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.report).to.be.an('object');",
+              "  pm.expect(body.report.id).to.be.a('number');",
+              "  pm.environment.set('webReportId', body.report.id);",
+              "});",
+              "",
+              "pm.test('Estructura del reporte correcta', () => {",
+              "  const body = pm.response.json();",
+              "  const report = body.report;",
+              "  pm.expect(report.matchId).to.be.a('number');",
+              "  pm.expect(report.callTakerName).to.be.a('string');",
+              "  pm.expect(report.incidentFound).to.be.a('boolean');",
+              "  pm.expect(report.involvedItems).to.be.an('array');",
+              "  pm.expect(report.injuredData).to.be.an('array');",
+              "  pm.expect(report.deceasedData).to.be.an('array');",
+              "  pm.expect(report.notes).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"matchId\": {{webIncidentId}},\n  \"createdBy\": \"Juan Cuellar\",\n  \"callTakerName\": \"Juan Cuellar\",\n  \"callerName\": \"\",\n  \"callerInvolved\": false,\n  \"incidentFound\": true,\n  \"injured\": 0,\n  \"homeless\": 0,\n  \"died\": 0,\n  \"vehiclesCanBeMoved\": false,\n  \"involvementOfTheWay\": \"\",\n  \"roadDirection\": \"\",\n  \"zone\": \"\",\n  \"involvedItems\": [],\n  \"observations\": \"\",\n  \"injuredData\": [],\n  \"deceasedData\": [],\n  \"notes\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{mbBaseUrl}}/api/incident-reports",
+          "host": ["{{mbBaseUrl}}"],
+          "path": ["api", "incident-reports"]
+        }
+      }
+    },
+    {
+      "name": "GetForm",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna ok true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.ok).to.be.true;",
+              "});",
+              "",
+              "pm.test('Retorna reporte con estructura correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.report).to.be.an('object');",
+              "  pm.expect(body.report.id).to.be.a('number');",
+              "  pm.expect(body.report.matchId).to.be.a('number');",
+              "  pm.expect(body.report.callTakerName).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna updates como array', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.updates).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('ID del reporte coincide', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.report.id).to.eql(parseInt(pm.environment.get('webReportId')));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{mbBaseUrl}}/api/incident-reports/{{webIncidentId}}",
+          "host": ["{{mbBaseUrl}}"],
+          "path": ["api", "incident-reports", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "UpdateForm",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna ok true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.ok).to.be.true;",
+              "});",
+              "",
+              "pm.test('Retorna reporte actualizado con involvedItems', () => {",
+              "  const body = pm.response.json();",
+              "  const report = body.report;",
+              "  pm.expect(report.id).to.be.a('number');",
+              "  pm.expect(report.involvedItems).to.be.an('array');",
+              "  pm.expect(report.involvedItems.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test('Estructura de involvedItems correcta', () => {",
+              "  const body = pm.response.json();",
+              "  const items = body.report.involvedItems;",
+              "  items.forEach((item) => {",
+              "    pm.expect(item.id).to.be.a('number');",
+              "    pm.expect(item.itemType).to.be.a('string');",
+              "    pm.expect(item.quantity).to.be.a('number');",
+              "    pm.expect(item.plates).to.be.an('array');",
+              "  });",
+              "});",
+              "",
+              "pm.test('Retorna updates con historial', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.updates).to.be.an('array');",
+              "  pm.expect(body.updates.length).to.be.above(0);",
+              "  pm.expect(body.updates[0].updateBy).to.be.a('string');",
+              "  pm.expect(body.updates[0].updateAt).to.be.a('string');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"updatedBy\": \"Juan Cuellar\",\n  \"matchId\": {{webIncidentId}},\n  \"callerName\": null,\n  \"callerInvolved\": true,\n  \"incidentFound\": true,\n  \"injured\": 0,\n  \"homeless\": 0,\n  \"died\": 0,\n  \"vehiclesCanBeMoved\": false,\n  \"involvementOfTheWay\": \"\",\n  \"roadDirection\": \"\",\n  \"zone\": \"\",\n  \"involvedItems\": [\n    {\n      \"itemType\": \"Moto\",\n      \"quantity\": 1,\n      \"plates\": [\"AAA12A\"]\n    },\n    {\n      \"itemType\": \"Automóvil\",\n      \"quantity\": 1,\n      \"plates\": [\"AAA123\"]\n    }\n  ],\n  \"observations\": \"\",\n  \"injuredData\": [],\n  \"deceasedData\": [],\n  \"cctvNumber\": \"\",\n  \"cctvType\": \"\",\n  \"assignedResources\": [],\n  \"accidentType\": \"\",\n  \"notes\": [],\n  \"createdBy\": \"Juan Cuellar\",\n  \"callTakerName\": \"Juan Cuellar\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{mbBaseUrl}}/api/incident-reports/{{webReportId}}",
+          "host": ["{{mbBaseUrl}}"],
+          "path": ["api", "incident-reports", "{{webReportId}}"]
         }
       }
     },

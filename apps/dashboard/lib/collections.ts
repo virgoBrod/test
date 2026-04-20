@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import type { CollectionType } from "@/types";
 
-export type CollectionId = "auth" | "mobile-flow" | "web-flow";
+export type CollectionId = "auth" | "mobile-flow" | "web-flow" | "web-flow-form" | "websocket-types";
 
 export interface CollectionConfig {
   id: CollectionId;
@@ -72,14 +72,48 @@ const BASE_COLLECTIONS: Omit<CollectionConfig, "collectionFile" | "environmentFi
       { key: "webPassword", label: "Contraseña", type: "password", envVar: "webPassword" },
     ],
   },
+  {
+    id: "web-flow-form",
+    name: "Web Flow - Form",
+    description: "Flujo completo del portal web con creación de formulario",
+    type: "web",
+    credentialFields: [
+      { key: "webEmail", label: "Email", type: "text", envVar: "webEmail" },
+      { key: "webPassword", label: "Contraseña", type: "password", envVar: "webPassword" },
+    ],
+  },
+  {
+    id: "websocket-types",
+    name: "WebSocket Types",
+    description: "Monitorea tipos de mensajes del WebSocket por 10 segundos",
+    type: "websocket",
+    credentialFields: [
+      { key: "webEmail", label: "Email", type: "text", envVar: "webEmail" },
+      { key: "webPassword", label: "Contraseña", type: "password", envVar: "webPassword" },
+    ],
+  },
 ];
 
 export function getCollection(id: CollectionId, projectId: string = "sales"): CollectionConfig | undefined {
   const baseCollection = BASE_COLLECTIONS.find((c) => c.id === id);
   if (!baseCollection) return undefined;
 
-  const validProjects = ["sales"]; // TODO: Add more projects when flows are ready
+  const validProjects = ["sales", "amva", "medellin", "movilidad_medellin"];
   const project = validProjects.includes(projectId) ? projectId : "sales";
+
+  // Medellín and Movilidad use web-style auth (email/password) instead of mobile (callsign/password)
+  let collection = { ...baseCollection };
+  const isMedellinProject = project === "medellin" || project === "movilidad_medellin";
+  if (isMedellinProject && id === "auth") {
+    collection = {
+      ...collection,
+      type: "web" as CollectionType,
+      credentialFields: [
+        { key: "webEmail", label: "Email", type: "text", envVar: "webEmail" },
+        { key: "webPassword", label: "Contraseña", type: "password", envVar: "webPassword" },
+      ],
+    };
+  }
 
   const collectionFile = path.join(
     COLLECTIONS_DIR,
@@ -89,14 +123,14 @@ export function getCollection(id: CollectionId, projectId: string = "sales"): Co
 
   // Mobile env: sales.postman_environment.json
   // Web env: web.sales.postman_environment.json
-  const envPrefix = baseCollection.type === "mobile" ? "" : `web.`;
+  const envPrefix = collection.type === "mobile" ? "" : `web.`;
   const environmentFile = path.join(
     ENVIRONMENTS_DIR,
     `${envPrefix}${project}.postman_environment.json`
   );
 
   return {
-    ...baseCollection,
+    ...collection,
     collectionFile,
     environmentFile,
     projectId: project,
@@ -104,7 +138,7 @@ export function getCollection(id: CollectionId, projectId: string = "sales"): Co
 }
 
 export function getAvailableFlows(projectId: string): CollectionConfig[] {
-  const validProjects = ["sales"]; // TODO: Add more projects when flows are ready
+  const validProjects = ["sales", "amva", "medellin", "movilidad_medellin"];
   const project = validProjects.includes(projectId) ? projectId : "sales";
 
   const projectCollectionsDir = path.join(COLLECTIONS_DIR, project);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CollectionType } from "@/types";
 import CredentialsModal from "./CredentialsModal";
 import LiveExecution from "./LiveExecution";
+import WebSocketLiveExecution from "./WebSocketLiveExecution";
 import { RunEvent } from "@/lib/runner";
 import { showToast } from "./Toast";
 
@@ -59,16 +60,21 @@ export default function TestCard({
     setRunning(true);
     setDone(false);
 
-    try {
-      const res = await fetch("/api/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+    const apiEndpoint = type === "websocket" ? "/api/run-ws" : "/api/run";
+    const apiBody = type === "websocket"
+      ? { credentials, projectId, projectName: projectId }
+      : { 
           collectionId: collection.id as any, 
           credentials, 
           projectId,
-          projectName: projectId // Pass project ID to use in runner
-        }),
+          projectName: projectId
+        };
+
+    try {
+      const res = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiBody),
       });
 
       if (!res.ok) {
@@ -199,7 +205,11 @@ export default function TestCard({
         </div>
 
         {(running || done) && (
-          <LiveExecution events={events} running={running} />
+          type === "websocket" ? (
+            <WebSocketLiveExecution events={events} running={running} />
+          ) : (
+            <LiveExecution events={events} running={running} />
+          )
         )}
 
         <div className="flex gap-2 mt-auto">
