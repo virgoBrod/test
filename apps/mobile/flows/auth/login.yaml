@@ -4,30 +4,79 @@ appId: com.inovisec.broadsecmobileapp
 # ============================================================
 # Test: Login exitoso con credenciales válidas
 # ============================================================
+
+# Abrir la app y esperar al splash screen
 - launchApp:
     clearState: true
 
-- assertVisible: "Username"
+# Esperar a que aparezca la pantalla de SIGN IN
+- waitForAnimationToEnd:
+    timeout: 10000
+
+- assertVisible: "SIGN IN"
+
+# Ingresar username
 - tapOn: "Username"
-- inputText: "JPF123"
+- inputText: "JESS13"
 
-- pressKey: Enter
-
-- scrollUntilVisible:
-    element:
-      text: "LOG IN"
-
-- assertVisible: "Password"
+# Ingresar password
 - tapOn: "Password"
-- inputText: "Test123!"
+- inputText: "Jess123#"
 
+# Enviar formulario con tecla Enter del teclado
 - pressKey: Enter
 
+# Esperar a que cargue la siguiente pantalla
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Hacer click en botón LOGIN
 - tapOn: "LOG IN"
 
-# Esperar que la animación de check termine (máx 5s)
+# Esperar a que cargue la siguiente pantalla
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn: "Later"
+
+# Esperar a que cargue la siguiente pantalla
 - waitForAnimationToEnd:
     timeout: 5000
 
-# Verificar que llegamos al home/dashboard
-- assertVisible: "Hello, Juan Cuellar"
+- tapOn: "Select Armament"
+
+- tapOn: "Pistol"
+
+- tapOn: "FICT-WPN-0001"
+
+- tapOn: "Motorcycle"
+
+- tapOn: "MTR-04A"
+
+- scrollUntilVisible:
+    element: "SAVE"
+    direction: DOWN
+    timeout: 30000
+
+- tapOn:
+    point: "85%,69%"
+
+- tapOn:
+    point: "85%,74%"
+
+- tapOn:
+    point: "85%,79%"
+
+- tapOn: "Enter the additional value"
+
+- inputText: "Teaser"
+
+- tapOn:
+    point: "87%,88%"
+
+- scrollUntilVisible:
+    element: "SAVE"
+    direction: DOWN
+    timeout: 30000
+
+- tapOn: "SAVE"
