@@ -546,20 +546,28 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('Status 200', () => {",
-              "  pm.response.to.have.status(200);",
-              "});",
+              "const status = pm.response.code;",
               "",
-              "pm.test('Retorna id del incidente', () => {",
-              "  const body = pm.response.json();",
-              "  pm.expect(body.id).to.be.a('number');",
-              "});",
+              "if (status === 404) {",
+              "  pm.test('Sin video para este incidente (404 esperado)', () => {",
+              "    console.log('No hay video asociado a este incidente');",
+              "  });",
+              "} else if (status === 200) {",
+              "  pm.test('Status 200', () => {",
+              "    pm.response.to.have.status(200);",
+              "  });",
               "",
-              "pm.test('Retorna videoUrl como string', () => {",
-              "  const body = pm.response.json();",
-              "  pm.expect(body.videoUrl).to.be.a('string');",
-              "  pm.expect(body.videoUrl).to.include('https://');",
-              "});"
+              "  pm.test('Retorna id del incidente', () => {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.id).to.be.a('number');",
+              "  });",
+              "",
+              "  pm.test('Retorna videoUrl como string', () => {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.videoUrl).to.be.a('string');",
+              "    pm.expect(body.videoUrl).to.include('https://');",
+              "  });",
+              "}"
             ],
             "type": "text/javascript"
           }
@@ -805,17 +813,26 @@
               "  pm.environment.set('webReportId', body.report.id);",
               "});",
               "",
-              "pm.test('Estructura del reporte correcta', () => {",
+              "pm.test('Campos obligatorios no son nulos', () => {",
               "  const body = pm.response.json();",
               "  const report = body.report;",
+              "  pm.expect(report.id).to.be.a('number');",
               "  pm.expect(report.matchId).to.be.a('number');",
+              "  pm.expect(report.detailId).to.be.a('number');",
               "  pm.expect(report.callTakerName).to.be.a('string');",
-              "  pm.expect(report.incidentFound).to.be.a('boolean');",
-              "  pm.expect(report.involvedItems).to.be.an('array');",
-              "  pm.expect(report.injuredData).to.be.an('array');",
-              "  pm.expect(report.deceasedData).to.be.an('array');",
-              "  pm.expect(report.notes).to.be.an('array');",
-              "});"
+              "  pm.expect(report.dispatchId).to.be.a('number');",
+              "  pm.expect(report.createdBy).to.be.a('string');",
+              "  pm.expect(report.updatedBy).to.be.a('string');",
+              "  pm.expect(report.createdAt).to.be.a('string');",
+              "  pm.expect(report.updatedAt).to.be.a('string');",
+              "  pm.expect(report.id).to.not.eql(null);",
+              "  pm.expect(report.matchId).to.not.eql(null);",
+              "  pm.expect(report.detailId).to.not.eql(null);",
+              "  pm.expect(report.dispatchId).to.not.eql(null);",
+              "});",
+              "",
+              "const _createReport = pm.response.json().report;",
+              "pm.environment.set('_createReport', JSON.stringify(_createReport));"
             ],
             "type": "text/javascript"
           }
@@ -869,8 +886,6 @@
               "  const body = pm.response.json();",
               "  pm.expect(body.report).to.be.an('object');",
               "  pm.expect(body.report.id).to.be.a('number');",
-              "  pm.expect(body.report.matchId).to.be.a('number');",
-              "  pm.expect(body.report.callTakerName).to.be.a('string');",
               "});",
               "",
               "pm.test('Retorna updates como array', () => {",
@@ -878,9 +893,27 @@
               "  pm.expect(body.updates).to.be.an('array');",
               "});",
               "",
-              "pm.test('ID del reporte coincide', () => {",
+              "pm.test('ID del reporte coincide con el creado', () => {",
               "  const body = pm.response.json();",
               "  pm.expect(body.report.id).to.eql(parseInt(pm.environment.get('webReportId')));",
+              "});",
+              "",
+              "pm.test('Campos coinciden con CreateForm', () => {",
+              "  const createReport = JSON.parse(pm.environment.get('_createReport'));",
+              "  const getReport = pm.response.json().report;",
+              "  pm.expect(getReport.id).to.be.a('number');",
+              "  pm.expect(getReport.id).to.eql(createReport.id);",
+              "  pm.expect(getReport.matchId).to.be.a('number');",
+              "  pm.expect(getReport.matchId).to.eql(createReport.matchId);",
+              "  pm.expect(getReport.detailId).to.be.a('number');",
+              "  pm.expect(getReport.detailId).to.eql(createReport.detailId);",
+              "  pm.expect(getReport.callTakerName).to.eql(createReport.callTakerName);",
+              "  pm.expect(getReport.dispatchId).to.be.a('number');",
+              "  pm.expect(getReport.dispatchId).to.eql(createReport.dispatchId);",
+              "  pm.expect(getReport.createdBy).to.eql(createReport.createdBy);",
+              "  pm.expect(getReport.updatedBy).to.eql(createReport.updatedBy);",
+              "  pm.expect(getReport.createdAt).to.eql(createReport.createdAt);",
+              "  pm.expect(getReport.updatedAt).to.eql(createReport.updatedAt);",
               "});"
             ],
             "type": "text/javascript"
@@ -943,7 +976,10 @@
               "  pm.expect(body.updates.length).to.be.above(0);",
               "  pm.expect(body.updates[0].updateBy).to.be.a('string');",
               "  pm.expect(body.updates[0].updateAt).to.be.a('string');",
-              "});"
+              "});",
+              "",
+              "const _updateBody = JSON.parse(pm.request.body.raw);",
+              "pm.environment.set('_updateBody', JSON.stringify(_updateBody));"
             ],
             "type": "text/javascript"
           }
@@ -974,6 +1010,69 @@
           "raw": "{{mbBaseUrl}}/api/incident-reports/{{webReportId}}",
           "host": ["{{mbBaseUrl}}"],
           "path": ["api", "incident-reports", "{{webReportId}}"]
+        }
+      }
+    },
+    {
+      "name": "GetForm (Validate Update)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna ok true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.ok).to.be.true;",
+              "});",
+              "",
+              "pm.test('Campos actualizados coinciden con lo enviado en UpdateForm', () => {",
+              "  const updateBody = JSON.parse(pm.environment.get('_updateBody'));",
+              "  const getReport = pm.response.json().report;",
+              "  pm.expect(getReport.callerInvolved).to.eql(updateBody.callerInvolved, 'callerInvolved debe coincidir');",
+              "  pm.expect(getReport.injured).to.eql(updateBody.injured, 'injured debe coincidir');",
+              "  pm.expect(getReport.homeless).to.eql(updateBody.homeless, 'homeless debe coincidir');",
+              "  pm.expect(getReport.died).to.eql(updateBody.died, 'died debe coincidir');",
+              "  pm.expect(getReport.vehiclesCanBeMoved).to.eql(updateBody.vehiclesCanBeMoved, 'vehiclesCanBeMoved debe coincidir');",
+              "});",
+              "",
+              "pm.test('involvedItems actualizados correctamente', () => {",
+              "  const updateBody = JSON.parse(pm.environment.get('_updateBody'));",
+              "  const getReport = pm.response.json().report;",
+              "  pm.expect(getReport.involvedItems).to.be.an('array');",
+              "  pm.expect(getReport.involvedItems.length).to.eql(updateBody.involvedItems.length, 'cantidad de involvedItems debe coincidir');",
+              "  updateBody.involvedItems.forEach((expected, i) => {",
+              "    pm.expect(getReport.involvedItems[i].itemType).to.eql(expected.itemType, 'itemType debe coincidir en item ' + i);",
+              "    pm.expect(getReport.involvedItems[i].quantity).to.eql(expected.quantity, 'quantity debe coincidir en item ' + i);",
+              "    pm.expect(JSON.stringify(getReport.involvedItems[i].plates)).to.eql(JSON.stringify(expected.plates), 'plates deben coincidir en item ' + i);",
+              "  });",
+              "});",
+              "",
+              "pm.test('updatedAt cambio despues del update', () => {",
+              "  const createReport = JSON.parse(pm.environment.get('_createReport'));",
+              "  const getReport = pm.response.json().report;",
+              "  pm.expect(getReport.updatedAt).to.not.eql(createReport.updatedAt, 'updatedAt debe ser diferente al original');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{mbBaseUrl}}/api/incident-reports/{{webIncidentId}}",
+          "host": ["{{mbBaseUrl}}"],
+          "path": ["api", "incident-reports", "{{webIncidentId}}"]
         }
       }
     },

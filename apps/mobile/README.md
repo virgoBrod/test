@@ -10,6 +10,7 @@ apps/mobile/
 │   └── android.yaml          # Emulator/device configuration
 ├── flows/
 │   ├── auth/
+│   │   ├── permissions.yaml  # ✅ Grant app permissions (run before login)
 │   │   ├── login.yaml        # ✅ Login with valid credentials
 │   │   └── login_failed.yaml # ❌ Login with invalid credentials (pending)
 │   ├── inventory/            # Pending
@@ -20,12 +21,13 @@ apps/mobile/
 
 ## Execution Order
 
-All tests run in sequence — after login succeeds, the next flow continues on the same session:
+Each flow is independent and complete. Run them separately:
 
-1. **auth/login.yaml** — Launch app, wait for splash, authenticate
-2. **inventory/** — Inventory operations (pending)
-3. **sales/** — Sales flow (pending)
-4. **task_creation/** — Task creation (pending)
+1. **auth/permissions.yaml** — Login + grant all app permissions (first time or after clearState)
+2. **auth/login.yaml** — Login + complete flow (assumes permissions already granted)
+3. **inventory/** — Inventory operations (pending)
+4. **sales/** — Sales flow (pending)
+5. **task_creation/** — Task creation (pending)
 
 ## Prerequisites
 
@@ -35,16 +37,18 @@ All tests run in sequence — after login succeeds, the next flow continues on t
 
 ## How to Run
 
-### Run all flows
+### First time setup (grant permissions)
 
 ```bash
-maestro test apps/mobile/flows/auth/login.yaml
+# Login + grant all permissions
+maestro test apps/mobile/flows/auth/permissions.yaml --env MOBILE_USERNAME=JESS13 --env MOBILE_PASSWORD="Jess123#"
 ```
 
-### Run a specific flow
+### Normal test run (permissions already granted)
 
 ```bash
-maestro test apps/mobile/flows/auth/login_failed.yaml
+# Login + complete flow
+maestro test apps/mobile/flows/auth/login.yaml --env MOBILE_USERNAME=JESS13 --env MOBILE_PASSWORD="Jess123#"
 ```
 
 ### Run with a specific device/emulator
@@ -61,15 +65,32 @@ maestro start-device
 adb devices
 ```
 
-## Current Test Credentials
+## Test Credentials
 
-| User   | Password   | Purpose        |
-|--------|------------|----------------|
-| JESS13 | Jess123#   | Login success  |
+Credentials are passed via environment variables to avoid hardcoding.
+
+### Setup
+
+1. Copy the example env file:
+   ```bash
+   cp apps/mobile/.env.example apps/mobile/.env
+   ```
+
+2. Run tests with credentials:
+   ```bash
+   maestro test apps/mobile/flows/auth/login.yaml --env MOBILE_USERNAME=JESS13 --env MOBILE_PASSWORD="Jess123#"
+   ```
+
+| Variable | Purpose |
+|----------|---------|
+| `MOBILE_USERNAME` | Login username |
+| `MOBILE_PASSWORD` | Login password |
 
 ## Flow Format
 
 Each flow is a Maestro YAML file:
+
+### Permissions Flow (permissions.yaml) - First time setup
 
 ```yaml
 appId: com.inovisec.broadsecmobileapp
@@ -81,13 +102,60 @@ appId: com.inovisec.broadsecmobileapp
     timeout: 10000
 - assertVisible: "SIGN IN"
 - tapOn: "Username"
-- inputText: "JESS13"
+- inputText: ${MOBILE_USERNAME}
 - tapOn: "Password"
-- inputText: "Jess123#"
+- inputText: ${MOBILE_PASSWORD}
 - pressKey: Enter
 - tapOn: "LOG IN"
 - waitForAnimationToEnd:
+    timeout: 5000
+
+# Permissions (all optional)
+- tapOn:
+    text: "While using the app"
+    optional: true
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: "Allow all"
+    optional: true
+- tapOn:
+    text: "Allow all the time"
+    optional: true
+
+- back
+- assertVisible:
+    text: "Hola! ${MOBILE_USERNAME}"
+    optional: true
+- stopApp
+```
+
+### Login Flow (login.yaml) - Normal test run
+
+```yaml
+appId: com.inovisec.broadsecmobileapp
+
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
     timeout: 10000
+- assertVisible: "SIGN IN"
+- tapOn: "Username"
+- inputText: ${MOBILE_USERNAME}
+- tapOn: "Password"
+- inputText: ${MOBILE_PASSWORD}
+- pressKey: Enter
+- tapOn: "LOG IN"
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn: "Later"
+- waitForAnimationToEnd:
+    timeout: 5000
+# ... continue with flow (armament, vehicle, etc.)
+- tapOn: "SAVE"
+- stopApp
 ```
 
 ## Maestro Commands

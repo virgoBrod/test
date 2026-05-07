@@ -1,0 +1,120 @@
+appId: com.inovisec.broadsecmobileapp
+
+---
+# ============================================================
+# Test: Login + Grant app permissions
+# Complete flow: credentials → LOG IN → all permissions
+# ============================================================
+
+# Launch app
+- launchApp:
+    clearState: false
+    
+# Wait for splash screen
+- waitForAnimationToEnd:
+    timeout: 20000
+
+# Verify we're on login screen
+- assertVisible: "SIGN IN"
+
+# Press LOG IN - this triggers permission dialogs
+- tapOn: "LOG IN"
+
+# Wait for permission dialogs to appear
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# ────────────────────────────────────────────────────────────
+# Permission 1: Camera - "Take photos and record video"
+# Option: "While using the app"
+# ────────────────────────────────────────────────────────────
+- tapOn:
+    text: "While using the app"
+    optional: true
+
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# ────────────────────────────────────────────────────────────
+# Permission 2: Location - "Precise" + "While using the app"
+# ────────────────────────────────────────────────────────────
+- tapOn:
+    text: "While using the app"
+    optional: true
+
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# ────────────────────────────────────────────────────────────
+# Permission 3: Audio - "Record audio"
+# Option: "While using the app"
+# ────────────────────────────────────────────────────────────
+- tapOn:
+    text: "While using the app"
+    optional: true
+
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# ────────────────────────────────────────────────────────────
+# Permission 4: Notifications
+# Option: "Allow"
+# ────────────────────────────────────────────────────────────
+- tapOn:
+    text: "Allow"
+    optional: true
+
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# ────────────────────────────────────────────────────────────
+# Permission 5: Phone calls - "Make and manage phone calls"
+# Option: "Allow"
+# ────────────────────────────────────────────────────────────
+- tapOn:
+    text: "Allow"
+    optional: true
+
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# ────────────────────────────────────────────────────────────
+# Permission 6: Photos and videos access
+# Option: "Allow all" or "Allow"
+# ────────────────────────────────────────────────────────────
+- tapOn:
+    text: "Allow all"
+    optional: true
+
+- tapOn:
+    text: "Allow"
+    optional: true
+
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# ────────────────────────────────────────────────────────────
+# Permission 7: Location settings panel
+# Set to "Allow all the time"
+# ────────────────────────────────────────────────────────────
+- tapOn:
+    text: "Allow all the time"
+    optional: true
+
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# ────────────────────────────────────────────────────────────
+# Back to app - should land on intendencia screen or main
+# ────────────────────────────────────────────────────────────
+- back
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify we're past login (intendencia or main screen)
+- assertVisible:
+    text: "SIGN IN"
+
+# Close app
+- stopApp

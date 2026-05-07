@@ -3,6 +3,7 @@ appId: com.inovisec.broadsecmobileapp
 ---
 # ============================================================
 # Test: Login exitoso con credenciales válidas
+# Assumes permissions are already granted
 # ============================================================
 
 # Abrir la app y esperar al splash screen
@@ -17,11 +18,11 @@ appId: com.inovisec.broadsecmobileapp
 
 # Ingresar username
 - tapOn: "Username"
-- inputText: "JESS13"
+- inputText: ${MOBILE_USERNAME}
 
 # Ingresar password
 - tapOn: "Password"
-- inputText: "Jess123#"
+- inputText: ${MOBILE_PASSWORD}
 
 # Enviar formulario con tecla Enter del teclado
 - pressKey: Enter
@@ -35,7 +36,7 @@ appId: com.inovisec.broadsecmobileapp
 
 # Esperar a que cargue la siguiente pantalla
 - waitForAnimationToEnd:
-    timeout: 3000
+    timeout: 5000
 
 - tapOn: "Later"
 
@@ -80,3 +81,6 @@ appId: com.inovisec.broadsecmobileapp
     timeout: 30000
 
 - tapOn: "SAVE"
+
+# Cerrar la app al finalizar el test
+- stopApp
