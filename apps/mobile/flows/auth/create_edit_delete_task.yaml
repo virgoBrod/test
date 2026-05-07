@@ -1,0 +1,146 @@
+appId: com.inovisec.broadsecmobileapp
+
+---
+
+- launchApp:
+    clearState: true
+
+- waitForAnimationToEnd:
+    timeout: 10000
+     
+- assertVisible: "SIGN IN"
+
+- tapOn: "Username"
+- inputText: ${MOBILE_USERNAME}
+
+- tapOn: "Password"
+- inputText: ${MOBILE_PASSWORD}
+
+- pressKey: Enter
+
+- waitForAnimationToEnd:
+    timeout: 1000
+
+- tapOn: "LOG IN"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn: 
+    text: "Later"
+    optional: true
+
+- waitForAnimationToEnd:
+    timeout: 10000
+
+- tapOn: "Add Task"
+
+- waitForAnimationToEnd:
+    timeout: 10000
+
+- tapOn: "Select an Action"
+
+- tapOn: "Control"
+
+- tapOn: "Control de velocidad"
+
+- tapOn:
+    point: "65%,70%"
+
+- tapOn: "Radius"
+
+- tapOn: "Write an address"
+- inputText: "Andino"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn: "Andino Shopping Mall"
+
+- tapOn:
+    point: "78%,81%"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn: "Delete Task"
+
+- tapOn: "Delete"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn: "Continue"
+
+- assertVisible: "Home"
+- tapOn: "Layer Selector"
+- tapOn: "Satellite"
+- tapOn: "Traffic"
+
+- tapOn:
+    point: "50%,50%"
+
+- tapOn: "Buscar ubicación"
+- tapOn: "Search Location"
+- inputText: "Andino"
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn: "Andino Shopping Mall"
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    point: "85%,76%"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn: "Layer Selector"
+- tapOn: "Street View"
+- tapOn:
+    point: "50%,50%"
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    point: "93%,44%"
+
+- tapOn:
+    point: "85%,76%"
+
+- tapOn:
+    point: "62%,91%"
+- tapOn: "Shift History"
+
+- tapOn: "Profile Picture"
+- tapOn: "Inventory"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- scrollUntilVisible:
+    element: "Save"
+    direction: DOWN
+    timeout: 30000
+
+- tapOn: "Cancel"
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn: "Profile Picture"
+- tapOn:
+    point: "75%,32%"
+- tapOn:
+    point: "69%,61%"
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn: "Menu Icon"
+- tapOn: "LOG OUT"
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible: "Shift History"
+- tapOn: "END SHIFT"
+- tapOn: "Confirm"
+
+- assertVisible: "SIGN IN"
+
+- stopApp
