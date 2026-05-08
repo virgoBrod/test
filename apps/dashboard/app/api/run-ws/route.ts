@@ -20,7 +20,21 @@ export async function POST(req: NextRequest) {
   const projectToUse = projectName || projectId || "sales";
   const email = credentials.webEmail || "";
   const password = credentials.webPassword || "";
-  const baseUrl = "https://web.inovisec.com";
+  
+  // Obtener la URL del proyecto desde la base de datos (no hardcodeada)
+  const projectResult = await db.execute({
+    sql: `SELECT base_url_web FROM projects WHERE id = ?`,
+    args: [projectToUse],
+  });
+  
+  const baseUrl = (projectResult.rows[0]?.base_url_web as string) || "https://web.inovisec.com";
+  
+  if (!projectResult.rows.length || !baseUrl) {
+    return new Response(
+      JSON.stringify({ error: `Project '${projectToUse}' not found or has no web URL configured` }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
   const result = await db.execute({
     sql: `INSERT INTO executions (collection, environment, started_at, status, project_id)
@@ -114,7 +128,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (!loginRes.ok) {
-          const errBody = await loginRes.text();
+          // No enviar el body crudo del error al cliente (puede contener info interna)
           send({
             type: "item",
             data: {
@@ -122,11 +136,11 @@ export async function POST(req: NextRequest) {
               url: `${baseUrl}/auth`,
               method: "POST",
               statusCode: loginRes.status,
-              output: `Login fallido: ${errBody}`,
+              output: `Login fallido (HTTP ${loginRes.status})`,
               passed: false,
             },
           });
-          await finish("failed", [], 0, `Login failed: ${errBody}`);
+          await finish("failed", [], 0, `Login failed (HTTP ${loginRes.status})`);
           return;
         }
 

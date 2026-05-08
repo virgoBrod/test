@@ -78,7 +78,7 @@ Credentials are passed via environment variables to avoid hardcoding.
 
 2. Run tests with credentials:
    ```bash
-   maestro test apps/mobile/flows/auth/login.yaml --env MOBILE_USERNAME=JESS13 --env MOBILE_PASSWORD="Jess123#"
+   maestro test flows/auth/create_edit_delete_task.yaml --env MOBILE_USERNAME=JESS13 --env MOBILE_PASSWORD="Jess123#"
    ```
 
 | Variable | Purpose |

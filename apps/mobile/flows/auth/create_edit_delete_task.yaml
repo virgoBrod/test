@@ -1,13 +1,14 @@
 appId: com.inovisec.broadsecmobileapp
 
 ---
-
+# Launch App
 - launchApp:
     clearState: true
 
 - waitForAnimationToEnd:
     timeout: 10000
-     
+
+# Login Flow     
 - assertVisible: "SIGN IN"
 
 - tapOn: "Username"
@@ -26,6 +27,7 @@ appId: com.inovisec.broadsecmobileapp
 - waitForAnimationToEnd:
     timeout: 5000
 
+# Update System
 - tapOn: 
     text: "Later"
     optional: true
@@ -33,19 +35,22 @@ appId: com.inovisec.broadsecmobileapp
 - waitForAnimationToEnd:
     timeout: 10000
 
+# Task Flow
+- assertVisible: "Company Logo"
+
 - tapOn: "Add Task"
 
 - waitForAnimationToEnd:
     timeout: 10000
 
+# Task Creation
 - tapOn: "Select an Action"
 
 - tapOn: "Control"
 
 - tapOn: "Control de velocidad"
 
-- tapOn:
-    point: "65%,70%"
+- tapOn: "Confirm selected time"
 
 - tapOn: "Radius"
 
@@ -57,12 +62,26 @@ appId: com.inovisec.broadsecmobileapp
 
 - tapOn: "Andino Shopping Mall"
 
-- tapOn:
-    point: "78%,81%"
+- tapOn: "Create task"
+
+# Task Edition
+- tapOn: "Control de velocidad"
+
+- tapOn: "Predefined"
+
+- tapOn: "Select a Pre-Created Polygon"
+
+- tapOn: "Zona Centro Occidental Sur"
+
+- tapOn: "Edit"
+
+- assertVisible: "Control de velocidad"
 
 - waitForAnimationToEnd:
     timeout: 5000
 
+
+# Task Deletion
 - tapOn: "Delete Task"
 
 - tapOn: "Delete"
@@ -72,6 +91,7 @@ appId: com.inovisec.broadsecmobileapp
 
 - tapOn: "Continue"
 
+# Dashboard Flow
 - assertVisible: "Home"
 - tapOn: "Layer Selector"
 - tapOn: "Satellite"
@@ -80,7 +100,8 @@ appId: com.inovisec.broadsecmobileapp
 - tapOn:
     point: "50%,50%"
 
-- tapOn: "Buscar ubicación"
+# Search Location Flow
+- tapOn: "Search location"
 - tapOn: "Search Location"
 - inputText: "Andino"
 - waitForAnimationToEnd:
@@ -88,47 +109,57 @@ appId: com.inovisec.broadsecmobileapp
 - tapOn: "Andino Shopping Mall"
 - waitForAnimationToEnd:
     timeout: 5000
-- tapOn:
-    point: "85%,76%"
+- tapOn: "Cancel navigation"
 
-- waitForAnimationToEnd:
-    timeout: 5000
-
+# Street View Flow
 - tapOn: "Layer Selector"
 - tapOn: "Street View"
 - tapOn:
     point: "50%,50%"
 - waitForAnimationToEnd:
-    timeout: 5000
-- tapOn:
-    point: "93%,44%"
+    timeout: 10000
+- tapOn: "Exit Street View"
 
-- tapOn:
-    point: "85%,76%"
-
-- tapOn:
-    point: "62%,91%"
-- tapOn: "Shift History"
-
+# Update Inventory
 - tapOn: "Profile Picture"
 - tapOn: "Inventory"
-
 - waitForAnimationToEnd:
     timeout: 5000
-
 - scrollUntilVisible:
     element: "Save"
     direction: DOWN
     timeout: 30000
-
 - tapOn: "Cancel"
 - waitForAnimationToEnd:
     timeout: 5000
+
+# 
 - tapOn: "Profile Picture"
-- tapOn:
-    point: "75%,32%"
-- tapOn:
-    point: "69%,61%"
+- tapOn: 
+    text: "Available"
+    optional: true
+- tapOn: 
+    text: "Inactivity Reason"
+    optional: true
+
+- tapOn: 
+    text: "517 Receso Laboral"
+    optional: true
+
+- tapOn: 
+    text: "Send"
+    optional: true
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn: 
+    text: "Unavailable"
+    optional: true
+- tapOn: 
+    text: "Confirm dialog"
+    optional: true
+
 - waitForAnimationToEnd:
     timeout: 5000
 

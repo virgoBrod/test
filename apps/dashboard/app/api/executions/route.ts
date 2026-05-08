@@ -10,8 +10,13 @@ export async function GET(req: NextRequest) {
   await initDb();
 
   const { searchParams } = new URL(req.url);
-  const limit = Number(searchParams.get("limit") ?? 20);
-  const offset = Number(searchParams.get("offset") ?? 0);
+  
+  // Validar y clamping de limit/offset para prevenir abusos
+  const rawLimit = Number(searchParams.get("limit"));
+  const rawOffset = Number(searchParams.get("offset"));
+  const limit = isNaN(rawLimit) ? 20 : Math.min(Math.max(rawLimit, 1), 100);
+  const offset = isNaN(rawOffset) ? 0 : Math.max(rawOffset, 0);
+  
   const projectId = searchParams.get("project_id");
   const collection = searchParams.get("collection");
   const status = searchParams.get("status");

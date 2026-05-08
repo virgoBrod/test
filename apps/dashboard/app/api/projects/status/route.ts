@@ -10,8 +10,41 @@ interface ProjectStatus {
 
 const HEALTH_ENDPOINT = "/api/health";
 
+// Dominios permitidos para prevenir SSRF
+const ALLOWED_DOMAINS = [
+  "inovisec.com",
+  "medellin.inovisec.com",
+  "web.inovisec.com",
+  "mb.inovisec.com",
+];
+
+/**
+ * Verifica que la URL pertenezca a un dominio permitido.
+ * Previene SSRF al evitar que el servidor fetchee URLs arbitrarias.
+ */
+function isAllowedDomain(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+    const hostname = url.hostname.toLowerCase();
+    
+    // Verificar si el hostname o algún subdominio padre está en la allowlist
+    return ALLOWED_DOMAINS.some(
+      (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function checkHealth(url: string, timeout = 3000): Promise<boolean> {
   if (!url) return false;
+  
+  // Validar que la URL sea de un dominio permitido
+  if (!isAllowedDomain(url)) {
+    console.warn(`[SSRF] Blocked health check to non-allowed domain: ${url}`);
+    return false;
+  }
+  
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);

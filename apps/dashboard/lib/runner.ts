@@ -7,6 +7,95 @@ export interface RunEvent {
   data: Record<string, unknown>;
 }
 
+/**
+ * Campos sensibles que deben eliminarse de los response bodies antes de almacenarlos.
+ * Incluye tokens, contraseñas, emails y datos PII.
+ */
+const SENSITIVE_FIELDS = new Set([
+  "token",
+  "accessToken",
+  "access_token",
+  "refreshToken",
+  "refresh_token",
+  "jwt",
+  "authorization",
+  "password",
+  "pass",
+  "passwd",
+  "secret",
+  "apiKey",
+  "api_key",
+  "email",
+  "mail",
+  "userEmail",
+  "user_email",
+  "phone",
+  "telefono",
+  "celular",
+  "ssn",
+  "document",
+  "documento",
+  "creditCard",
+  "credit_card",
+  "cvv",
+]);
+
+/**
+ * Sanitiza un objeto eliminando campos sensibles recursivamente.
+ * Reemplaza los valores por "[REDACTED]" para mantener la estructura del JSON.
+ */
+function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    // Verificar si el nombre del campo (case-insensitive) es sensible
+    const keyLower = key.toLowerCase().replace(/[_-]/g, "");
+    const isSensitive = Array.from(SENSITIVE_FIELDS).some(
+      (field) => keyLower.includes(field.toLowerCase().replace(/[_-]/g, ""))
+    );
+    
+    if (isSensitive) {
+      sanitized[key] = "[REDACTED]";
+    } else if (value && typeof value === "object" && !Array.isArray(value)) {
+      // Recursión para objetos anidados
+      sanitized[key] = sanitizeObject(value as Record<string, unknown>);
+    } else if (Array.isArray(value)) {
+      // Sanitizar arrays de objetos
+      sanitized[key] = value.map((item) =>
+        item && typeof item === "object"
+          ? sanitizeObject(item as Record<string, unknown>)
+          : item
+      );
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  
+  return sanitized;
+}
+
+/**
+ * Sanitiza un response body eliminando campos sensibles.
+ * Si es JSON, parsea, sanitiza y re-serializa.
+ * Si no es JSON, devuelve null (mejor no almacenar texto plano sin sanitizar).
+ */
+function sanitizeResponseBody(body: string | null): string | null {
+  if (!body) return null;
+  
+  try {
+    const parsed = JSON.parse(body);
+    if (typeof parsed === "object" && parsed !== null) {
+      const sanitized = sanitizeObject(parsed);
+      return JSON.stringify(sanitized, null, 2);
+    }
+    // Si es un JSON primitivo (string, number), no hay campos que sanitizar
+    return body;
+  } catch {
+    // No es JSON — no almacenar texto plano (podría contener tokens en headers, etc.)
+    return null;
+  }
+}
+
 export function runCollection(
   config: CollectionConfig,
   envVars: { key: string; value: string }[],
@@ -95,7 +184,7 @@ export function runCollection(
     assertionsMap.set(key, list);
   });
 
-  // Guardamos los datos de red del request, incluyendo el response body
+  // Guardamos los datos de red del request, incluyendo el response body (sanitizado)
   run.on("request", (_err, args) => {
     const key = args.item.id ?? args.item.name;
 
@@ -110,9 +199,11 @@ export function runCollection(
         } catch {
           responseBody = raw;
         }
+        // Sanitizamos campos sensibles (tokens, emails, passwords, etc.)
+        responseBody = sanitizeResponseBody(responseBody);
         // Truncamos a 50KB para no reventar la DB
         if (responseBody && responseBody.length > 50000) {
-          responseBody = responseBody.slice(0, 50000) + "\n... [truncado]";
+          responseBody = responseBody.slice(0, 50000) + "\n... [truncated]";
         }
       }
     } catch {

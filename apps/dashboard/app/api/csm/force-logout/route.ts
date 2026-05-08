@@ -21,7 +21,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!user_identifier.includes("@")) {
+  // Validación robusta de email (RFC 5322 simplificado)
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  if (!emailRegex.test(user_identifier) || !user_identifier.includes(".")) {
     return Response.json(
       { success: false, message: "El identificador debe ser un email válido" },
       { status: 400 }

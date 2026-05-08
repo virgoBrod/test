@@ -12,6 +12,12 @@ if (!fs.existsSync(DATA_DIR)) {
 export const db = createClient({ url: `file:${DB_PATH}` });
 
 export async function initDb() {
+  // Ejecutar cleanup de datos antiguos (>30 días) al inicializar
+  // Esto se ejecuta en background para no bloquear la inicialización
+  cleanupOldData(30).catch(() => {
+    // Ignorar errores de cleanup en la inicialización
+  });
+
   await db.execute(`
     CREATE TABLE IF NOT EXISTS executions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -107,4 +113,34 @@ export async function initDb() {
   } catch {
     // La columna ya existe
   }
+}
+
+/**
+ * Limpia ejecuciones y resultados mayores a 30 días.
+ * Se ejecuta automáticamente al inicializar la DB.
+ * También puede llamarse manualmente vía el endpoint POST /api/cleanup.
+ */
+export async function cleanupOldData(retentionDays: number = 30): Promise<{ deletedExecutions: number; deletedResults: number }> {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+  const cutoffISO = cutoffDate.toISOString();
+
+  // Primero eliminar resultados de ejecuciones antiguas
+  const deleteResults = await db.execute({
+    sql: `DELETE FROM results WHERE execution_id IN (
+            SELECT id FROM executions WHERE started_at < ?
+          )`,
+    args: [cutoffISO],
+  });
+
+  // Luego eliminar las ejecuciones antiguas
+  const deleteExecutions = await db.execute({
+    sql: `DELETE FROM executions WHERE started_at < ?`,
+    args: [cutoffISO],
+  });
+
+  return {
+    deletedExecutions: deleteExecutions.rowsAffected,
+    deletedResults: deleteResults.rowsAffected,
+  };
 }

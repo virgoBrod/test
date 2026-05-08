@@ -20,7 +20,6 @@ const CATEGORIES: Record<string, string> = {
 
 async function initSession(): Promise<string> {
   const url = `${GLPI_API_URL}/initSession`;
-  console.log("[GLPI] Calling initSession:", url);
   
   const res = await fetch(url, {
     headers: {
@@ -31,18 +30,16 @@ async function initSession(): Promise<string> {
   });
 
   const responseText = await res.text();
-  console.log("[GLPI] initSession response status:", res.status);
-  console.log("[GLPI] initSession response body:", responseText.substring(0, 500));
 
   if (!res.ok) {
-    throw new Error(`GLPI initSession failed (${res.status}): ${responseText}`);
+    throw new Error(`GLPI initSession failed (${res.status})`);
   }
 
   let data;
   try {
     data = JSON.parse(responseText);
   } catch {
-    throw new Error(`GLPI returned non-JSON: ${responseText.substring(0, 200)}`);
+    throw new Error("GLPI returned non-JSON response");
   }
 
   if (!data.session_token) {
@@ -64,40 +61,45 @@ interface CreateTicketInput {
 export async function createTicket(input: CreateTicketInput): Promise<{ id: number; url: string }> {
   const sessionToken = await initSession();
 
-  const categoryId = input.categoryKey ? CATEGORIES[input.categoryKey] : CATEGORIES.INCIDENTES;
+  try {
+    const categoryId = input.categoryKey ? CATEGORIES[input.categoryKey] : CATEGORIES.INCIDENTES;
 
-  const ticketData = {
-    input: {
-      name: input.name,
-      content: input.content,
-      entities_id: GLPI_ENTITY_ID,
-      itilcategories_id: parseInt(categoryId, 10),
-      _users_id_requester: 0,
-    },
-  };
+    const ticketData = {
+      input: {
+        name: input.name,
+        content: input.content,
+        entities_id: GLPI_ENTITY_ID,
+        itilcategories_id: parseInt(categoryId, 10),
+        _users_id_requester: 0,
+      },
+    };
 
-  const res = await fetch(`${GLPI_API_URL}/Ticket`, {
-    method: "POST",
-    headers: {
-      "App-Token": GLPI_APP_TOKEN,
-      "Session-Token": sessionToken,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(ticketData),
-  });
+    const res = await fetch(`${GLPI_API_URL}/Ticket`, {
+      method: "POST",
+      headers: {
+        "App-Token": GLPI_APP_TOKEN,
+        "Session-Token": sessionToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(ticketData),
+    });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`GLPI createTicket failed (${res.status}): ${body}`);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`GLPI createTicket failed (${res.status}): ${body}`);
+    }
+
+    const data = await res.json();
+    const ticketId = data.id;
+
+    return {
+      id: ticketId,
+      url: `${GLPI_API_URL.replace("/apirest.php", "")}/front/ticket.form.php?id=${ticketId}`,
+    };
+  } finally {
+    // Siempre matar la sesión después de usar, incluso si hay error
+    await killSession(sessionToken);
   }
-
-  const data = await res.json();
-  const ticketId = data.id;
-
-  return {
-    id: ticketId,
-    url: `${GLPI_API_URL.replace("/apirest.php", "")}/front/ticket.form.php?id=${ticketId}`,
-  };
 }
 
 export async function killSession(sessionToken: string): Promise<void> {
