@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthContext";
 
 const navItems = [
   {
@@ -36,6 +37,12 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/login";
+  };
 
   return (
     <aside className="w-56 bg-white border-r border-gray-100 flex flex-col">
@@ -66,8 +73,26 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-100">
-        <p className="text-xs text-gray-400">v0.1.0</p>
+      <div className="p-3 border-t border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {user?.username}
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              {user?.role}
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="ml-3 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Cerrar sesión"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
+        </div>
       </div>
     </aside>
   );

@@ -5,7 +5,7 @@ import fs from "fs";
 interface Flow {
   id: string;
   name: string;
-  type: "mobile" | "web" | "websocket";
+  type: "mobile" | "web" | "websocket" | "mix";
   hasAssertions: boolean;
 }
 
@@ -55,9 +55,11 @@ export async function GET(req: NextRequest) {
           const content = JSON.parse(fs.readFileSync(filePath, "utf-8"));
           const hasRequests = content.item && content.item.length > 0;
           
-          let type: "mobile" | "web" | "websocket" = "mobile";
+          let type: "mobile" | "web" | "websocket" | "mix" = "mobile";
           if (flowName.includes("websocket")) {
             type = "websocket";
+          } else if (flowName.includes("combined")) {
+            type = "mix";
           } else if (flowName.includes("web")) {
             type = "web";
           } else if (flowName.includes("mobile")) {
@@ -65,6 +67,11 @@ export async function GET(req: NextRequest) {
           } else if (flowName === "auth") {
             // Medellín and Movilidad use web-style auth (email/password) instead of mobile (callsign/password)
             type = (projectToUse === "medellin" || projectToUse === "movilidad_medellin") ? "web" : "mobile";
+          } else {
+            // For flows with non-standard names, determine type by checking the first request URL
+            const firstItem = content.item?.[0];
+            const firstUrl = firstItem?.request?.url?.raw || "";
+            type = firstUrl.includes("webBaseUrl") || firstUrl.includes("{{webBaseUrl}}") ? "web" : "mobile";
           }
 
           flows.push({

@@ -53,7 +53,12 @@ export default function CredentialsModal({ collection, projectId, onConfirm, onC
     if (collection.type === "mobile") {
       credentials.callsign = mobileCreds.callsign;
       credentials.password = mobileCreds.password;
-    } else {
+    } else if (collection.type === "web") {
+      credentials.webEmail = webCreds.email;
+      credentials.webPassword = webCreds.password;
+    } else if (collection.type === "mix") {
+      credentials.callsign = mobileCreds.callsign;
+      credentials.password = mobileCreds.password;
       credentials.webEmail = webCreds.email;
       credentials.webPassword = webCreds.password;
     }
@@ -69,7 +74,10 @@ export default function CredentialsModal({ collection, projectId, onConfirm, onC
 
         if (collection.type === "mobile") {
           newCreds.mobile = { ...mobileCreds };
-        } else {
+        } else if (collection.type === "web") {
+          newCreds.web = { ...webCreds };
+        } else if (collection.type === "mix") {
+          newCreds.mobile = { ...mobileCreds };
           newCreds.web = { ...webCreds };
         }
 
@@ -110,7 +118,7 @@ export default function CredentialsModal({ collection, projectId, onConfirm, onC
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {collection.type === "mobile" ? (
+          {(collection.type === "web" || collection.type === "websocket") && (
             <>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">Callsign</label>
@@ -137,7 +145,9 @@ export default function CredentialsModal({ collection, projectId, onConfirm, onC
                 />
               </div>
             </>
-          ) : (
+          )}
+
+          {collection.type === "web" && (
             <>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">Email</label>
@@ -162,6 +172,65 @@ export default function CredentialsModal({ collection, projectId, onConfirm, onC
                   className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900
                     focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
+              </div>
+            </>
+          )}
+
+          {collection.type === "mix" && (
+            <>
+              <div className="pb-3 border-b border-gray-200">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3">Credenciales Web</h4>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={webCreds.email}
+                    onChange={(e) => setWebCreds((p) => ({ ...p, email: e.target.value }))}
+                    required
+                    placeholder="Email"
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 mt-3">
+                  <label className="text-sm font-medium text-gray-700">Contraseña</label>
+                  <input
+                    type="password"
+                    value={webCreds.password}
+                    onChange={(e) => setWebCreds((p) => ({ ...p, password: e.target.value }))}
+                    required
+                    placeholder="Contraseña"
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-3">Credenciales Mobile</h4>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-gray-700">Callsign</label>
+                  <input
+                    type="text"
+                    value={mobileCreds.callsign}
+                    onChange={(e) => setMobileCreds((p) => ({ ...p, callsign: e.target.value }))}
+                    required
+                    placeholder="Callsign"
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 mt-3">
+                  <label className="text-sm font-medium text-gray-700">Contraseña</label>
+                  <input
+                    type="password"
+                    value={mobileCreds.password}
+                    onChange={(e) => setMobileCreds((p) => ({ ...p, password: e.target.value }))}
+                    required
+                    placeholder="Contraseña"
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
               </div>
             </>
           )}

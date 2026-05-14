@@ -146,10 +146,17 @@ export default function TestCard({
             callsign: creds.mobile.callsign,
             password: creds.mobile.password,
           };
-        } else if (type === "web" && creds.web) {
+        } else if ((type === "web" || type === "websocket") && creds.web) {
           formattedCreds = {
             webEmail: creds.web.email,
             webPassword: creds.web.password,
+          };
+        } else if (type === "mix" && creds.mobile && creds.web) {
+          formattedCreds = {
+            webEmail: creds.web.email,
+            webPassword: creds.web.password,
+            callsign: creds.mobile.callsign,
+            password: creds.mobile.password,
           };
         }
 

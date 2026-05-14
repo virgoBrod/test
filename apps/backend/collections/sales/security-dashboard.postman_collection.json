@@ -1,0 +1,261 @@
+{
+  "info": {
+    "name": "Security Dashboard",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "const status = pm.response.code;",
+          "if (status >= 400) {",
+          "  let body = '';",
+          "  try { body = JSON.stringify(pm.response.json(), null, 2); }",
+          "  catch (e) { body = pm.response.text(); }",
+          "  console.error('=== REQUEST FAILED ===');",
+          "  console.error('Request : ' + pm.info.requestName);",
+          "  console.error('Status  : ' + status + ' ' + pm.response.status);",
+          "  console.error('URL     : ' + pm.request.url.toString());",
+          "  console.error('Body    : ' + body);",
+          "  console.error('======================');",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna token', () => {",
+              "  pm.expect(pm.response.json().token).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna datos del calltaker', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.idCallTaker).to.be.a('string');",
+              "  pm.expect(body.fullName).to.be.a('string');",
+              "  pm.expect(body.email).to.be.a('string');",
+              "  pm.expect(body.role).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna stationNumber como numero', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.stationNumber).to.be.a('number');",
+              "});",
+              "",
+              "const _login = pm.response.json();",
+              "pm.environment.set('webAuthToken', _login.token);",
+              "pm.environment.set('webCallTakerId', _login.idCallTaker);",
+              "pm.environment.set('webStationNumber', _login.stationNumber);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{webEmail}}\",\n  \"password\": \"{{webPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/auth",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["auth"]
+        }
+      }
+    },
+    {
+      "name": "GetSecurityDashboard",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// --- Status 200 ---",
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// --- Response time < 30 segundos ---",
+              "pm.test('Response time menor a 30 segundos', () => {",
+              "  pm.expect(pm.response.responseTime).to.be.below(30000);",
+              "});",
+              "",
+              "// --- Log del tiempo de respuesta ---",
+              "console.log('Response time: ' + pm.response.responseTime + 'ms');",
+              "",
+              "// --- Validar estructura del response ---",
+              "pm.test('Response tiene keys principales', () => {",
+              "  const body = pm.response.json();",
+              "",
+              "  // Objetos con value/difference/increase",
+              "  pm.expect(body).to.have.property('totalEmergencies');",
+              "  pm.expect(body.totalEmergencies).to.have.property('value');",
+              "  pm.expect(body.totalEmergencies).to.have.property('difference');",
+              "  pm.expect(body.totalEmergencies).to.have.property('increase');",
+              "",
+              "  pm.expect(body).to.have.property('averageResponseTime');",
+              "  pm.expect(body.averageResponseTime).to.have.property('value');",
+              "  pm.expect(body.averageResponseTime).to.have.property('difference');",
+              "  pm.expect(body.averageResponseTime).to.have.property('increase');",
+              "",
+              "  pm.expect(body).to.have.property('averageArrivalTime');",
+              "  pm.expect(body.averageArrivalTime).to.have.property('value');",
+              "  pm.expect(body.averageArrivalTime).to.have.property('difference');",
+              "  pm.expect(body.averageArrivalTime).to.have.property('increase');",
+              "",
+              "  pm.expect(body).to.have.property('undispatchedCases');",
+              "  pm.expect(body.undispatchedCases).to.have.property('value');",
+              "  pm.expect(body.undispatchedCases).to.have.property('difference');",
+              "  pm.expect(body.undispatchedCases).to.have.property('increase');",
+              "});",
+              "",
+              "pm.test('Response tiene arrays de datos', () => {",
+              "  const body = pm.response.json();",
+              "",
+              "  pm.expect(body).to.have.property('locations').that.is.an('array');",
+              "  pm.expect(body).to.have.property('emergencyType').that.is.an('array');",
+              "  pm.expect(body).to.have.property('emergencySubTypes').that.is.an('array');",
+              "  pm.expect(body).to.have.property('responseTime').that.is.an('array');",
+              "  pm.expect(body).to.have.property('percentageTypeEmergencies').that.is.an('array');",
+              "  pm.expect(body).to.have.property('emergencyItem').that.is.an('array');",
+              "});",
+              "",
+              "pm.test('Response tiene numberOfEmergencies con categories y series', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('numberOfEmergencies');",
+              "  pm.expect(body.numberOfEmergencies).to.have.property('categories').that.is.an('array');",
+              "  pm.expect(body.numberOfEmergencies).to.have.property('series').that.is.an('array');",
+              "});",
+              "",
+              "pm.test('Response tiene incidents con breakdown', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('incidents');",
+              "  pm.expect(body.incidents).to.have.property('breakdown').that.is.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/reports?startDate=2026-05-05+00:00&endDate=2026-05-12+23:50&lastStartDate=2026-04-26+00:10&lastEndDate=2026-05-04+00:00&managementStartTime=00:00:00&managementEndTime=00:30:00&arrivalStartTime=00:00:00&arrivalEndTime=00:30:00&totalResponseStartTime=00:00:00&totalResponseEndTime=00:30:00",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "reports"],
+          "query": [
+            {
+              "key": "startDate",
+              "value": "2026-05-05+00:00"
+            },
+            {
+              "key": "endDate",
+              "value": "2026-05-12+23:50"
+            },
+            {
+              "key": "lastStartDate",
+              "value": "2026-04-26+00:10"
+            },
+            {
+              "key": "lastEndDate",
+              "value": "2026-05-04+00:00"
+            },
+            {
+              "key": "managementStartTime",
+              "value": "00:00:00"
+            },
+            {
+              "key": "managementEndTime",
+              "value": "00:30:00"
+            },
+            {
+              "key": "arrivalStartTime",
+              "value": "00:00:00"
+            },
+            {
+              "key": "arrivalEndTime",
+              "value": "00:30:00"
+            },
+            {
+              "key": "totalResponseStartTime",
+              "value": "00:00:00"
+            },
+            {
+              "key": "totalResponseEndTime",
+              "value": "00:30:00"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna message de sesion finalizada', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Token limpiado', () => {",
+              "  pm.environment.unset('webAuthToken');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/logout",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["logout"]
+        }
+      }
+    }
+  ]
+}

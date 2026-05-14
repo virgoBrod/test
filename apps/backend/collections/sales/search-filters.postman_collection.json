@@ -1,0 +1,476 @@
+{
+  "info": {
+    "name": "Search Filters",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "const status = pm.response.code;",
+          "if (status >= 400) {",
+          "  let body = '';",
+          "  try { body = JSON.stringify(pm.response.json(), null, 2); }",
+          "  catch (e) { body = pm.response.text(); }",
+          "  console.error('=== REQUEST FAILED ===');",
+          "  console.error('Request : ' + pm.info.requestName);",
+          "  console.error('Status  : ' + status + ' ' + pm.response.status);",
+          "  console.error('URL     : ' + pm.request.url.toString());",
+          "  console.error('Body    : ' + body);",
+          "  console.error('======================');",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna token', () => {",
+              "  pm.expect(pm.response.json().token).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna datos del calltaker', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.idCallTaker).to.be.a('string');",
+              "  pm.expect(body.fullName).to.be.a('string');",
+              "  pm.expect(body.email).to.be.a('string');",
+              "  pm.expect(body.role).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna stationNumber como numero', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.stationNumber).to.be.a('number');",
+              "});",
+              "",
+              "const _login = pm.response.json();",
+              "pm.environment.set('webAuthToken', _login.token);",
+              "pm.environment.set('webCallTakerId', _login.idCallTaker);",
+              "pm.environment.set('webStationNumber', _login.stationNumber);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{webEmail}}\",\n  \"password\": \"{{webPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/auth",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["auth"]
+        }
+      }
+    },
+    {
+      "name": "GetIncidents",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna paginacion correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.total).to.be.a('number');",
+              "  pm.expect(body.currentPage).to.be.a('number');",
+              "  pm.expect(body.totalPages).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna array de incidents', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Retorna al menos 2 incidentes para busqueda', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data.length).to.be.at.least(2);",
+              "});",
+              "",
+              "pm.test('Estructura de incident correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.data.length > 0) {",
+              "    const incident = body.data[0];",
+              "    pm.expect(incident.id).to.be.a('number');",
+              "    pm.expect(incident.phone).to.be.a('string');",
+              "    pm.expect(incident.case_state).to.be.a('string');",
+              "    pm.expect(incident.type).to.be.a('string');",
+              "  }",
+              "});",
+              "",
+              "pm.test('Incidentes tienen carbyne_id y phone para busqueda', () => {",
+              "  const body = pm.response.json();",
+              "  const inc1 = body.data[0];",
+              "  const inc2 = body.data[1];",
+              "  pm.expect(inc1.carbyne_id, 'Incidente 1 debe tener carbyne_id').to.not.be.null;",
+              "  pm.expect(inc1.phone, 'Incidente 1 debe tener phone').to.be.a('string');",
+              "  pm.expect(inc2.carbyne_id, 'Incidente 2 debe tener carbyne_id').to.not.be.null;",
+              "  pm.expect(inc2.phone, 'Incidente 2 debe tener phone').to.be.a('string');",
+              "});",
+              "",
+              "// Guardar datos completos",
+              "const _incidents = pm.response.json();",
+              "const _inc1 = _incidents.data[0];",
+              "const _inc2 = _incidents.data[1];",
+              "pm.environment.set('carbyneId1', _inc1.carbyne_id.toString());",
+              "pm.environment.set('phone1', _inc1.phone);",
+              "pm.environment.set('carbyneId2', _inc2.carbyne_id.toString());",
+              "pm.environment.set('phone2', _inc2.phone);",
+              "",
+              "// Guardar parciales (minimo 4 digitos)",
+              "pm.environment.set('partialCarbyneId1', _inc1.carbyne_id.toString().slice(0, 4));",
+              "pm.environment.set('partialCarbyneId2', _inc2.carbyne_id.toString().slice(0, 4));",
+              "// Phone: quitar prefijo 57 y tomar primeros 4 digitos",
+              "const _phone1Clean = _inc1.phone.replace(/^57/, '');",
+              "const _phone2Clean = _inc2.phone.replace(/^57/, '');",
+              "pm.environment.set('partialPhone1', _phone1Clean.slice(0, 4));",
+              "pm.environment.set('partialPhone2', _phone2Clean.slice(0, 4));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/broad?timeRangeSelectValues=hoy&myCases=0&callTime[]=40&callTime[]=1800&startTime=00:00:40&endTime=00:30:00&rangeSelected=C&limit=50&page=1&search=",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "broad"],
+          "query": [
+            { "key": "timeRangeSelectValues", "value": "hoy" },
+            { "key": "myCases", "value": "0" },
+            { "key": "callTime[]", "value": "40" },
+            { "key": "callTime[]", "value": "1800" },
+            { "key": "startTime", "value": "00:00:40" },
+            { "key": "endTime", "value": "00:30:00" },
+            { "key": "rangeSelected", "value": "C" },
+            { "key": "limit", "value": "50" },
+            { "key": "page", "value": "1" },
+            { "key": "search", "value": "" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "SearchByCarbyneIdPartial",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna paginacion correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.total).to.be.a('number');",
+              "  pm.expect(body.currentPage).to.be.a('number');",
+              "  pm.expect(body.totalPages).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Busqueda parcial por CarbyneId retorna al menos 1 resultado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('array');",
+              "  pm.expect(body.total).to.be.at.least(1);",
+              "});",
+              "",
+              "pm.test('Al menos un resultado contiene el parcial del carbyne_id', () => {",
+              "  const body = pm.response.json();",
+              "  const partial = pm.environment.get('partialCarbyneId1');",
+              "  const found = body.data.some(inc => inc.carbyne_id.toString().includes(partial));",
+              "  pm.expect(found, 'Al menos un resultado debe contener carbyne_id con ' + partial).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/broad?timeRangeSelectValues=hoy&myCases=0&callTime[]=40&callTime[]=1800&startTime=00:00:40&endTime=00:30:00&rangeSelected=C&limit=50&page=1&search={{partialCarbyneId1}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "broad"],
+          "query": [
+            { "key": "timeRangeSelectValues", "value": "hoy" },
+            { "key": "myCases", "value": "0" },
+            { "key": "callTime[]", "value": "40" },
+            { "key": "callTime[]", "value": "1800" },
+            { "key": "startTime", "value": "00:00:40" },
+            { "key": "endTime", "value": "00:30:00" },
+            { "key": "rangeSelected", "value": "C" },
+            { "key": "limit", "value": "50" },
+            { "key": "page", "value": "1" },
+            { "key": "search", "value": "{{partialCarbyneId1}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "SearchByCarbyneIdFull",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna paginacion correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.total).to.be.a('number');",
+              "  pm.expect(body.currentPage).to.be.a('number');",
+              "  pm.expect(body.totalPages).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Busqueda completa por CarbyneId retorna al menos 1 resultado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('array');",
+              "  pm.expect(body.total).to.be.at.least(1);",
+              "});",
+              "",
+              "pm.test('El resultado contiene el carbyne_id exacto buscado', () => {",
+              "  const body = pm.response.json();",
+              "  const searchedId = parseInt(pm.environment.get('carbyneId1'));",
+              "  const found = body.data.some(inc => inc.carbyne_id === searchedId);",
+              "  pm.expect(found, 'El carbyne_id ' + searchedId + ' debe aparecer en los resultados').to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/broad?timeRangeSelectValues=hoy&myCases=0&callTime[]=40&callTime[]=1800&startTime=00:00:40&endTime=00:30:00&rangeSelected=C&limit=50&page=1&search={{carbyneId1}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "broad"],
+          "query": [
+            { "key": "timeRangeSelectValues", "value": "hoy" },
+            { "key": "myCases", "value": "0" },
+            { "key": "callTime[]", "value": "40" },
+            { "key": "callTime[]", "value": "1800" },
+            { "key": "startTime", "value": "00:00:40" },
+            { "key": "endTime", "value": "00:30:00" },
+            { "key": "rangeSelected", "value": "C" },
+            { "key": "limit", "value": "50" },
+            { "key": "page", "value": "1" },
+            { "key": "search", "value": "{{carbyneId1}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "SearchByPhonePartial",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna paginacion correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.total).to.be.a('number');",
+              "  pm.expect(body.currentPage).to.be.a('number');",
+              "  pm.expect(body.totalPages).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Busqueda parcial por telefono retorna al menos 1 resultado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('array');",
+              "  pm.expect(body.total).to.be.at.least(1);",
+              "});",
+              "",
+              "pm.test('Al menos un resultado contiene el parcial del phone', () => {",
+              "  const body = pm.response.json();",
+              "  const partial = pm.environment.get('partialPhone2');",
+              "  const found = body.data.some(inc => inc.phone.includes(partial));",
+              "  pm.expect(found, 'Al menos un resultado debe contener phone con ' + partial).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/broad?timeRangeSelectValues=hoy&myCases=0&callTime[]=40&callTime[]=1800&startTime=00:00:40&endTime=00:30:00&rangeSelected=C&limit=50&page=1&search={{partialPhone2}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "broad"],
+          "query": [
+            { "key": "timeRangeSelectValues", "value": "hoy" },
+            { "key": "myCases", "value": "0" },
+            { "key": "callTime[]", "value": "40" },
+            { "key": "callTime[]", "value": "1800" },
+            { "key": "startTime", "value": "00:00:40" },
+            { "key": "endTime", "value": "00:30:00" },
+            { "key": "rangeSelected", "value": "C" },
+            { "key": "limit", "value": "50" },
+            { "key": "page", "value": "1" },
+            { "key": "search", "value": "{{partialPhone2}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "SearchByPhoneFull",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna paginacion correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.total).to.be.a('number');",
+              "  pm.expect(body.currentPage).to.be.a('number');",
+              "  pm.expect(body.totalPages).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Busqueda completa por telefono retorna al menos 1 resultado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('array');",
+              "  pm.expect(body.total).to.be.at.least(1);",
+              "});",
+              "",
+              "pm.test('El resultado contiene el phone exacto buscado', () => {",
+              "  const body = pm.response.json();",
+              "  const searchedPhone = pm.environment.get('phone2');",
+              "  const found = body.data.some(inc => inc.phone === searchedPhone);",
+              "  pm.expect(found, 'El phone ' + searchedPhone + ' debe aparecer en los resultados').to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/broad?timeRangeSelectValues=hoy&myCases=0&callTime[]=40&callTime[]=1800&startTime=00:00:40&endTime=00:30:00&rangeSelected=C&limit=50&page=1&search={{phone2}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "broad"],
+          "query": [
+            { "key": "timeRangeSelectValues", "value": "hoy" },
+            { "key": "myCases", "value": "0" },
+            { "key": "callTime[]", "value": "40" },
+            { "key": "callTime[]", "value": "1800" },
+            { "key": "startTime", "value": "00:00:40" },
+            { "key": "endTime", "value": "00:30:00" },
+            { "key": "rangeSelected", "value": "C" },
+            { "key": "limit", "value": "50" },
+            { "key": "page", "value": "1" },
+            { "key": "search", "value": "{{phone2}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna message de sesion finalizada', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Token limpiado', () => {",
+              "  pm.environment.unset('webAuthToken');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/logout",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["logout"]
+        }
+      }
+    }
+  ]
+}

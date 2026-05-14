@@ -1,0 +1,309 @@
+{
+  "info": {
+    "name": "Incident Creation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "const status = pm.response.code;",
+          "if (status >= 400) {",
+          "  let body = '';",
+          "  try { body = JSON.stringify(pm.response.json(), null, 2); }",
+          "  catch (e) { body = pm.response.text(); }",
+          "  console.error('=== REQUEST FAILED ===');",
+          "  console.error('Request : ' + pm.info.requestName);",
+          "  console.error('Status  : ' + status + ' ' + pm.response.status);",
+          "  console.error('URL     : ' + pm.request.url.toString());",
+          "  console.error('Body    : ' + body);",
+          "  console.error('======================');",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna token', () => {",
+              "  pm.expect(pm.response.json().token).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna datos del calltaker', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.idCallTaker).to.be.a('string');",
+              "  pm.expect(body.fullName).to.be.a('string');",
+              "  pm.expect(body.email).to.be.a('string');",
+              "  pm.expect(body.role).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna stationNumber como numero', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.stationNumber).to.be.a('number');",
+              "});",
+              "",
+              "const _login = pm.response.json();",
+              "pm.environment.set('webAuthToken', _login.token);",
+              "pm.environment.set('webCallTakerId', _login.idCallTaker);",
+              "pm.environment.set('webStationNumber', _login.stationNumber);",
+              "pm.environment.set('webEmail', _login.email);",
+              "pm.environment.set('webFullName', _login.fullName);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{webEmail}}\",\n  \"password\": \"{{webPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/auth",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["auth"]
+        }
+      }
+    },
+    {
+      "name": "GetIncidentTypes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna array de tipos de incidente', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "  pm.expect(body.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test('Estructura de tipo de incidente correcta', () => {",
+              "  const body = pm.response.json();",
+              "  const first = body[0];",
+              "  pm.expect(first.id).to.be.a('number');",
+              "  pm.expect(first.nombre).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Contiene tipo Puesto de Control', () => {",
+              "  const body = pm.response.json();",
+              "  const found = body.some(t => t.nombre === 'Puesto de Control');",
+              "  pm.expect(found, 'Debe existir el tipo Puesto de Control').to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/incidents",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "incidents"]
+        }
+      }
+    },
+    {
+      "name": "CaseCreation",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.environment.set('caseCreationTime', new Date().toISOString());",
+              "pm.environment.set('caseTimeValue', new Date().toTimeString().split(' ')[0]);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', () => {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Retorna message OK', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "  pm.expect(body.message).to.include('OK');",
+              "});",
+              "",
+              "pm.test('Retorna match_id', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.match_id).to.be.a('number');",
+              "  pm.expect(body.match_id).to.be.above(0);",
+              "  pm.environment.set('createdMatchId', body.match_id.toString());",
+              "});",
+              "",
+              "pm.test('Retorna carbyne_id', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.carbyne_id).to.be.a('number');",
+              "  pm.expect(body.carbyne_id).to.be.above(0);",
+              "});",
+              "",
+              "pm.test('Retorna broad_id y detail_id', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.broad_id).to.be.a('number');",
+              "  pm.expect(body.detail_id).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna mongo con saved true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.mongo).to.be.an('object');",
+              "  pm.expect(body.mongo.saved).to.be.true;",
+              "  pm.expect(body.mongo.reportID).to.be.a('string');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"call_taker_email\": \"{{webEmail}}\",\n  \"station_number\": {{webStationNumber}},\n  \"formattedAddress\": \"Cra. 11 #82-71, Chapinero, Bogotá, Cundinamarca, Colombia\",\n  \"latitude\": 4.666848,\n  \"caller_phone\": 3001001010,\n  \"longitude\": -74.05257259999999,\n  \"type\": [\"Puesto de Control\"],\n  \"caseTime\": \"{{caseTimeValue}}\",\n  \"createdTime\": \"{{caseCreationTime}}\",\n  \"duration\": \"00:01:42\",\n  \"name\": \"{{webFullName}}\",\n  \"lastName\": \"{{webFullName}}\",\n  \"is_broad\": true,\n  \"project\": \"\",\n  \"caller_name\": \"Juan Prueba\",\n  \"priority\": \"Baja\",\n  \"suspects\": \"Sospechosos de Prueba\",\n  \"injured\": \"Heridos de Prueba\",\n  \"weapons\": \"Armas de Prueba\",\n  \"vehicles\": \"Vehiculos de Prueba\",\n  \"substances\": \"Sustancias de Prueba\",\n  \"observations\": \"\",\n  \"summary\": \"El incidente fue reportado por Juan Prueba, quien indicó que había Heridos de Prueba, observó sospechosos, Sospechosos de Prueba, reportó arma(s): Armas de Prueba, vehículo(s): Vehiculos de Prueba, sustancia(s): Sustancias de Prueba.\",\n  \"emergency_type\": \"Puesto de Control\",\n  \"caller_information\": \"Juan Prueba\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/api/operator_case",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "operator_case"]
+        }
+      }
+    },
+    {
+      "name": "GetIncident",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna datos del incidente creado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('number');",
+              "  pm.expect(body.case_state).to.be.a('string');",
+              "  pm.expect(body.phone).to.be.a('string');",
+              "  pm.expect(body.type).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('ID coincide con el incidente creado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.eql(parseInt(pm.environment.get('createdMatchId')));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/incident/{{createdMatchId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "incident", "{{createdMatchId}}"]
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna message de sesion finalizada', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Token limpiado', () => {",
+              "  pm.environment.unset('webAuthToken');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/logout",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["logout"]
+        }
+      }
+    }
+  ]
+}

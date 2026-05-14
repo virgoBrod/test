@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import type { CollectionType } from "@/types";
 
-export type CollectionId = "auth" | "mobile-flow" | "web-flow" | "web-flow-form" | "websocket-types";
+export type CollectionId = "auth" | "mobile-flow" | "web-flow" | "web-flow-form" | "websocket-types" | "search-filters" | "incident-creation" | "security-dashboard" | "combined-flow";
 
 export interface CollectionConfig {
   id: CollectionId;
@@ -92,6 +92,48 @@ const BASE_COLLECTIONS: Omit<CollectionConfig, "collectionFile" | "environmentFi
       { key: "webPassword", label: "Contraseña", type: "password", envVar: "webPassword" },
     ],
   },
+  {
+    id: "search-filters",
+    name: "Search Filters",
+    description: "Prueba filtros de busqueda por CarbyneId y telefono",
+    type: "web",
+    credentialFields: [
+      { key: "webEmail", label: "Email", type: "text", envVar: "webEmail" },
+      { key: "webPassword", label: "Contraseña", type: "password", envVar: "webPassword" },
+    ],
+  },
+  {
+    id: "incident-creation",
+    name: "Incident Creation",
+    description: "Crea un incidente y valida su creacion",
+    type: "web",
+    credentialFields: [
+      { key: "webEmail", label: "Email", type: "text", envVar: "webEmail" },
+      { key: "webPassword", label: "Contraseña", type: "password", envVar: "webPassword" },
+    ],
+  },
+  {
+    id: "security-dashboard",
+    name: "Security Dashboard",
+    description: "Carga de metricas del dashboard de seguridad - valida tiempo de respuesta < 30s",
+    type: "web",
+    credentialFields: [
+      { key: "webEmail", label: "Email", type: "text", envVar: "webEmail" },
+      { key: "webPassword", label: "Contraseña", type: "password", envVar: "webPassword" },
+    ],
+  },
+  {
+    id: "combined-flow",
+    name: "Combined Flow (Web + Mobile)",
+    description: "Flow combinado - login web y mobile, verifica estado de agente, busca incidente con ubicación",
+    type: "mix",
+    credentialFields: [
+      { key: "webEmail", label: "Email Web", type: "text", envVar: "webEmail" },
+      { key: "webPassword", label: "Password Web", type: "password", envVar: "webPassword" },
+      { key: "callsign", label: "Callsign Mobile", type: "text", envVar: "callsign" },
+      { key: "password", label: "Password Mobile", type: "password", envVar: "password" },
+    ],
+  },
 ];
 
 export function getCollection(id: CollectionId, projectId: string = "sales"): CollectionConfig | undefined {
@@ -123,7 +165,11 @@ export function getCollection(id: CollectionId, projectId: string = "sales"): Co
 
   // Mobile env: sales.postman_environment.json
   // Web env: web.sales.postman_environment.json
-  const envPrefix = collection.type === "mobile" ? "" : `web.`;
+  // Combined: combined.sales.postman_environment.json
+  let envPrefix = collection.type === "mobile" ? "" : `web.`;
+  if (id === "combined-flow") {
+    envPrefix = "combined.";
+  }
   const environmentFile = path.join(
     ENVIRONMENTS_DIR,
     `${envPrefix}${project}.postman_environment.json`

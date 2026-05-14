@@ -19,7 +19,7 @@ const flow = argMap.flow || 'auth';
 const type = argMap.type || 'mobile';
 
 const validProjects = ['sales', 'amva'];
-const validFlows = ['auth', 'mobile-flow', 'web-flow', 'web-flow-form'];
+const validFlows = ['auth', 'mobile-flow', 'web-flow', 'web-flow-form', 'search-filters', 'incident-creation'];
 const validTypes = ['mobile', 'web'];
 
 if (!validProjects.includes(project)) {

@@ -1,0 +1,789 @@
+{
+  "info": {
+    "name": "Combined Flow - Web + Mobile",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "const status = pm.response.code;",
+          "if (status >= 400) {",
+          "  let body = '';",
+          "  try { body = JSON.stringify(pm.response.json(), null, 2); }",
+          "  catch (e) { body = pm.response.text(); }",
+          "  console.error('=== REQUEST FAILED ===');",
+          "  console.error('Request : ' + pm.info.requestName);",
+          "  console.error('Status  : ' + status + ' ' + pm.response.status);",
+          "  console.error('URL     : ' + pm.request.url.toString());",
+          "  console.error('Body    : ' + body);",
+          "  console.error('======================');",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Web Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna token', () => {",
+              "  pm.expect(pm.response.json().token).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna datos del calltaker', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.idCallTaker).to.be.a('string');",
+              "  pm.expect(body.fullName).to.be.a('string');",
+              "  pm.expect(body.email).to.be.a('string');",
+              "  pm.expect(body.role).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Retorna stationNumber como numero', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.stationNumber).to.be.a('number');",
+              "});",
+              "",
+              "const _login = pm.response.json();",
+              "pm.environment.set('webAuthToken', _login.token);",
+              "pm.environment.set('webCallTakerId', _login.idCallTaker);",
+              "pm.environment.set('webStationNumber', _login.stationNumber);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{webEmail}}\",\n  \"password\": \"{{webPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/auth",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["auth"]
+        }
+      }
+    },
+    {
+      "name": "2. Mobile Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna token', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.token).to.be.a('string');",
+              "  pm.environment.set('authToken', body.token);",
+              "});",
+              "",
+              "pm.test('Retorna idAgent y nameAgent', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.idAgent).to.be.a('number');",
+              "  pm.expect(body.nameAgent).to.be.a('string');",
+              "  pm.environment.set('agentId', body.idAgent);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"callsign\": \"{{callsign}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth"]
+        }
+      }
+    },
+    {
+      "name": "3. Get Agent State",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna agent_id y state', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.agent_id).to.be.a('string');",
+              "  pm.expect(body.state).to.be.a('string');",
+              "  pm.environment.set('agentState', body.state);",
+              "});",
+              "",
+              "pm.test('Estructura active_case correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.active_case) {",
+              "    pm.expect(body.active_case.agent_history_id).to.be.a('number');",
+              "    pm.expect(body.active_case.case_state).to.be.a('string');",
+              "    pm.expect(body.active_case.flags).to.be.an('object');",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/state?agent_id={{agentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "state"],
+          "query": [
+            {
+              "key": "agent_id",
+              "value": "{{agentId}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Ensure Available",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const state = pm.environment.get('agentState');",
+              "if (state === 'available') {",
+              "  pm.execution.skipRequest();",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Agente cambiado a available', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.newState).to.be.a('string');",
+              "  pm.environment.set('agentState', body.newState);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{agentId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agentStates",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agentStates"]
+        }
+      }
+    },
+    {
+      "name": "5. Get Incidents",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna paginacion correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.total).to.be.a('number');",
+              "  pm.expect(body.currentPage).to.be.a('number');",
+              "  pm.expect(body.totalPages).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna array de incidents', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Estructura de incident correcta', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.data.length > 0) {",
+              "    const incident = body.data[0];",
+              "    pm.expect(incident.id).to.be.a('number');",
+              "    pm.expect(incident.phone).to.be.a('string');",
+              "    pm.expect(incident.case_state).to.be.a('string');",
+              "    pm.expect(incident.type).to.be.a('string');",
+              "  }",
+              "});",
+              "",
+              "pm.test('Retorna al menos un resultado', () => {",
+              "  pm.expect(pm.response.json().data.length).to.be.above(0);",
+              "});",
+              "",
+              "// Buscar incidente con lat/lng en la respuesta",
+              "const _incidents = pm.response.json();",
+              "let foundWithLocation = null;",
+              "for (let i = 0; i < _incidents.data.length; i++) {",
+              "  const inc = _incidents.data[i];",
+              "  if (inc.latitude !== null && inc.longitude !== null) {",
+              "    foundWithLocation = inc;",
+              "    pm.environment.set('webIncidentId', inc.id);",
+              "    console.log('Incidente con ubicacion encontrado: ' + inc.id + ' - lat: ' + inc.latitude + ', lng: ' + inc.longitude);",
+              "    break;",
+              "  }",
+              "}",
+              "",
+              "if (!foundWithLocation) {",
+              "  console.log('No se encontro ningun incidente con ubicacion, usando el primero');",
+              "  pm.environment.set('webIncidentId', _incidents.data[0].id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/broad?timeRangeSelectValues=hoy&myCases=0&callTime[]=40&callTime[]=1800&startTime=00:00:40&endTime=00:30:00&rangeSelected=C&limit=50&page=1&search=",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "broad"],
+          "query": [
+            { "key": "timeRangeSelectValues", "value": "hoy" },
+            { "key": "myCases", "value": "0" },
+            { "key": "callTime[]", "value": "40" },
+            { "key": "callTime[]", "value": "1800" },
+            { "key": "startTime", "value": "00:00:40" },
+            { "key": "endTime", "value": "00:30:00" },
+            { "key": "rangeSelected", "value": "C" },
+            { "key": "limit", "value": "50" },
+            { "key": "page", "value": "1" },
+            { "key": "search", "value": "" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Get Incident Detail",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna datos del incidente', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('number');",
+              "  pm.expect(body.case_state).to.be.a('string');",
+              "  pm.expect(body.phone).to.be.a('string');",
+              "  pm.expect(body.callType).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('ID coincide con el incidente seleccionado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.eql(parseInt(pm.environment.get('webIncidentId')));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/incident/{{webIncidentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "incident", "{{webIncidentId}}"]
+        }
+      }
+    },
+    {
+      "name": "7. Search Agent",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna paginacion correcta', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.page).to.be.a('number');",
+              "  pm.expect(body.total).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('Retorna array de agentes', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Al menos un agente encontrado', () => {",
+              "  pm.expect(pm.response.json().data.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test('Agente tiene estado available', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.data.length > 0) {",
+              "    pm.expect(body.data[0].state).to.eql('available');",
+              "  }",
+              "});",
+              "",
+              "// Guardar ID del agente encontrado",
+              "const _agents = pm.response.json();",
+              "if (_agents.data.length > 0) {",
+              "  pm.environment.set('mobileAgentId', _agents.data[0].id);",
+              "  console.log('Agente encontrado: ' + _agents.data[0].id + ' - ' + _agents.data[0].callsign);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/agents?page=1&limit=50&search={{callsign}}&state%5B%5D=available",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "agents"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "50" },
+            { "key": "search", "value": "{{callsign}}" },
+            { "key": "state[]", "value": "available" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "8. Dispatch to Agent",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna mensaje de despacho exitoso', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"station_number\": {{webStationNumber}},\n  \"match_id\": {{webIncidentId}},\n  \"agent_id\": [{{mobileAgentId}}],\n  \"link_rc\": null,\n  \"customMessage\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/api/dispatchs",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "dispatchs"]
+        }
+      }
+    },
+    {
+      "name": "9. Set Agent In-Site",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna mensaje de estado actualizado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "  pm.expect(body.message).to.include('in_site');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{mobileAgentId}},\n  \"match_id\": {{webIncidentId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/api/states",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "states"]
+        }
+      }
+    },
+    {
+      "name": "10. Verify In-Site",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna estado del agente', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.agent_id).to.be.a('string');",
+              "  pm.expect(body.state).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Agente tiene estado assigned', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.state).to.eql('assigned');",
+              "});",
+              "",
+              "pm.test('Caso tiene estado case_insite', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.active_case.case_state).to.eql('case_insite');",
+              "});",
+              "",
+              "pm.test('Flags indican in_site true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.active_case.flags.in_site).to.be.true;",
+              "  pm.expect(body.active_case.flags.dispatched).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/state?agent_id={{mobileAgentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "state"],
+          "query": [
+            {
+              "key": "agent_id",
+              "value": "{{mobileAgentId}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "11. Terminate Case",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna mensaje de caso terminado', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "  pm.expect(body.message).to.include('terminated');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agent_id\": {{mobileAgentId}},\n  \"match_id\": {{webIncidentId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{webBaseUrl}}/api/states",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "states"]
+        }
+      }
+    },
+    {
+      "name": "12. Verify Case Closed",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna estado del agente', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.agent_id).to.be.a('string');",
+              "  pm.expect(body.state).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Agente tiene estado available o terminated', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(['available', 'terminated']).to.include(body.state);",
+              "});",
+              "",
+              "pm.test('Caso tiene estado case_closed', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.active_case) {",
+              "    pm.expect(body.active_case.case_state).to.eql('case_closed');",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/api/state?agent_id={{mobileAgentId}}",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["api", "state"],
+          "query": [
+            {
+              "key": "agent_id",
+              "value": "{{mobileAgentId}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "13. Mobile Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna message', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Token limpiado', () => {",
+              "  pm.environment.unset('authToken');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "logout"]
+        }
+      }
+    },
+    {
+      "name": "14. Web Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Retorna message de sesion finalizada', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.message).to.be.a('string');",
+              "});",
+              "",
+              "pm.test('Token limpiado', () => {",
+              "  pm.environment.unset('webAuthToken');",
+              "  pm.environment.unset('webCallTakerId');",
+              "  pm.environment.unset('webStationNumber');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{webAuthToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{webBaseUrl}}/logout",
+          "host": ["{{webBaseUrl}}"],
+          "path": ["logout"]
+        }
+      }
+    }
+  ]
+}

@@ -12,6 +12,8 @@
     "test:sales:mobile": "node run-flow.js -- project sales -- flow mobile-flow -- type mobile",
     "test:sales:web": "node run-flow.js -- project sales -- flow web-flow -- type web",
     "test:sales:web-form": "node run-flow.js -- project sales -- flow web-flow-form -- type web",
+    "test:sales:search-filters": "node run-flow.js -- project sales -- flow search-filters -- type web",
+    "test:sales:incident-creation": "node run-flow.js -- project sales -- flow incident-creation -- type web",
     "test:movilidad": "node run-flow.js -- project movilidad_medellin",
     "test:movilidad:auth": "node run-flow.js -- project movilidad_medellin -- flow auth",
     "test:movilidad:mobile": "node run-flow.js -- project movilidad_medellin -- flow mobile-flow -- type mobile",

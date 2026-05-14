@@ -66,4 +66,4 @@ export interface Assertion {
   error?: string;
 }
 
-export type CollectionType = "mobile" | "web" | "websocket";
+export type CollectionType = "mobile" | "web" | "websocket" | "mix";
